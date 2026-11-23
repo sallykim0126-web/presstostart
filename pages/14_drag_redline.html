@@ -314,7 +314,7 @@ body{
 <div class="scene">
 
   <img
-    src="../assets/40-10.svg"
+    src="../assets/40-10.webp"
     class="base"
     id="baseImage"
     alt=""
@@ -698,7 +698,7 @@ redlineClose.addEventListener("click", () => {
 
 async function revealRedlineWindow() {
   const popup = new Image();
-  popup.src = "../assets/40-18.svg";
+  popup.src = "../assets/40-18.webp";
   await Promise.all([
     baseImage.decode().then(() => new Promise(resolve => setTimeout(resolve, INTRO_HOLD_MS))),
     popup.decode()

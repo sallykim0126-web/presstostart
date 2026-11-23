@@ -38,7 +38,7 @@
   overflow: hidden;
 
   background-color: #f3f3f3;
-  background-image: url("../assets/15-14.svg");
+  background-image: url("../assets/15-14.webp");
   background-size: cover;
   background-position: center center;
   background-repeat: no-repeat;
@@ -178,7 +178,7 @@
   align-items: center;
   justify-content: center;
 
-  background: #f3f3f3 url("../assets/15-14.svg")
+  background: #f3f3f3 url("../assets/15-14.webp")
               center / cover no-repeat;
 }
 
@@ -1391,7 +1391,7 @@ width: min(18vw, 32vh);
 
   /* 기존 종이 질감 SVG 배경 유지 */
   background-color: #f3f3f3;
-  background-image: url("../assets/15-14.svg");
+  background-image: url("../assets/15-14.webp");
   background-size: 100% 100%;
   background-position: center;
   background-repeat: no-repeat;
@@ -1406,7 +1406,7 @@ width: min(18vw, 32vh);
   z-index: 110;
 
   background-color: #f3f3f3;
-  background-image: url("../assets/15-14.svg");
+  background-image: url("../assets/15-14.webp");
   background-size: 100% 100%;
   background-position: center;
   background-repeat: no-repeat;
@@ -1578,7 +1578,7 @@ width: min(18vw, 32vh);
   overflow: hidden;
   z-index: 110;
 
-  background: #f3f3f3 url("../assets/15-14.svg")
+  background: #f3f3f3 url("../assets/15-14.webp")
               center / cover no-repeat;
 }
 
@@ -2326,7 +2326,7 @@ let canMoveTo08At = Infinity;
 
 // 22번 SVG 미리 불러오기
 const image22 = new Image();
-image22.src = "../assets/22.svg";
+image22.src = "../assets/22.webp";
 
 noButton.addEventListener("click", async () => {
 
@@ -2410,7 +2410,7 @@ window.addEventListener("wheel", async (e) => {
   try {
     await image22.decode();
   } catch (error) {
-    console.error("22.svg 로딩 실패:", error);
+    console.error("22.webp 로딩 실패:", error);
     movedTo22 = false;
     return;
   }
