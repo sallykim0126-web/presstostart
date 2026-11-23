@@ -34,22 +34,22 @@
     const audio = AudioContext ? new AudioContext() : null;
     const assetBase = new URL('.', document.currentScript.src);
     const effects = {
-      click: { file: 'presto-mouse-click.mp3', volume: 0.45 },
-      leftMouse: { file: 'presto-left-mouse.mp3', volume: 0.45 },
-      rightMouse: { file: 'presto-right-mouse.mp3', volume: 0.45 },
-      blink: { file: 'presto-blink-whoosh-2s.wav', volume: 0.45, delay: 0.22, offset: 0.2 },
-      dice: { file: 'presto-dice.mp3', volume: 0.65, offset: 0.095 },
-      accessKey: { file: 'presto-access-key.mp3', volume: 0.55, offset: 0.045, duration: 0.21 },
-      gritTyping: { file: 'presto-grit-typing.mp3', volume: 0.8, offset: 0.25, loop: true },
-      cardScan: { file: 'presto-card-beep.mp3', volume: 0.55, offset: 0.36 },
-      clock: { file: 'presto-clock-ticking.mp3', volume: 0.28, offset: 0.05, duration: 4, playbackRate: 0.8 },
-      systemError: { file: 'universfield-error-notification-04-199275.mp3', volume: 0.6 },
-      folder: { file: 'presto-folder-flap.mp3', volume: 0.65, duration: 1.5 },
-      polaroidPeel: { file: 'freesound_community-masking_tape_2-44104.mp3', volume: 0.8, offset: 0.32, duration: 0.8 },
-      tryHarderBoom: { file: 'universfield-cinematic-impact-boom-04-326123.mp3', volume: 0.58, offset: 0.08 },
-      notesScroll: { file: 'lenspulse-foley-paper-handling-amp-page-turning-sfx-584919.mp3', volume: 0.75, duration: 0.5 },
-      tryHarderImpact: { file: 'universfield-cinematic-impact-hit-352702.mp3', volume: 0.55, offset: 0.09 },
-      tryHarderRow: { file: 'universfield-system-notification-02-352442.mp3', volume: 0.48, offset: 0.045 }
+      click: { file: 'presto-mouse-click.m4a', volume: 0.45 },
+      leftMouse: { file: 'presto-left-mouse.m4a', volume: 0.45 },
+      rightMouse: { file: 'presto-right-mouse.m4a', volume: 0.45 },
+      blink: { file: 'presto-blink-whoosh-2s.m4a', volume: 0.45, delay: 0.22, offset: 0.2 },
+      dice: { file: 'presto-dice.m4a', volume: 0.65, offset: 0.095 },
+      accessKey: { file: 'presto-access-key.m4a', volume: 0.55, offset: 0.045, duration: 0.21 },
+      gritTyping: { file: 'presto-grit-typing.m4a', volume: 0.8, offset: 0.25, loop: true },
+      cardScan: { file: 'presto-card-beep.m4a', volume: 0.55, offset: 0.36 },
+      clock: { file: 'presto-clock-ticking.m4a', volume: 0.28, offset: 0.05, duration: 4, playbackRate: 0.8 },
+      systemError: { file: 'universfield-error-notification-04-199275.m4a', volume: 0.6 },
+      folder: { file: 'presto-folder-flap.m4a', volume: 0.65, duration: 1.5 },
+      polaroidPeel: { file: 'freesound_community-masking_tape_2-44104.m4a', volume: 0.8, offset: 0.32, duration: 0.8 },
+      tryHarderBoom: { file: 'universfield-cinematic-impact-boom-04-326123.m4a', volume: 0.58, offset: 0.08 },
+      notesScroll: { file: 'lenspulse-foley-paper-handling-amp-page-turning-sfx-584919.m4a', volume: 0.75, duration: 0.5 },
+      tryHarderImpact: { file: 'universfield-cinematic-impact-hit-352702.m4a', volume: 0.55, offset: 0.09 },
+      tryHarderRow: { file: 'universfield-system-notification-02-352442.m4a', volume: 0.48, offset: 0.045 }
     };
 
     function loadEffect(name) {
