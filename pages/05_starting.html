@@ -703,9 +703,13 @@ async function blinkToNext() {
     await new Promise(resolve => setTimeout(resolve, BLINK_HOLD_MS));
     await eye(1, 0, BLINK_OPEN_MS);
 
-    // Leave the revealed scene visible before allowing the next scroll.
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // 중간 문구 장면을 충분히 보여준 다음 다음 페이지로 자동 진행한다.
+    await new Promise(resolve => setTimeout(resolve, 1200));
     document.documentElement.dataset.blinkDone = 'true';
+
+    if (window.parent !== window) {
+      window.parent.postMessage({ type: 'STARTING_COMPLETE' }, window.location.origin);
+    }
   } catch (error) {
     console.error('Card transition failed:', error);
   } finally {
