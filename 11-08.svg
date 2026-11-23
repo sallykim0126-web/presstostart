@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1920 1080">
+  <defs>
+    <style>
+      .cls-1 {
+        font-family: IBMPlexMono-SemiBold, 'IBM Plex Mono';
+        font-weight: 600;
+      }
+
+      .cls-1, .cls-2 {
+        font-size: 66.42px;
+      }
+
+      .cls-3, .cls-4, .cls-2 {
+        fill: #595959;
+      }
+
+      .cls-5 {
+        font-size: 39.64px;
+      }
+
+      .cls-5, .cls-2 {
+        font-family: IBMPlexMono-Regular, 'IBM Plex Mono';
+      }
+
+      .cls-6 {
+        fill: url(#_무제_그라디언트_272);
+        opacity: .9;
+      }
+
+      .cls-7 {
+        isolation: isolate;
+      }
+
+      .cls-4 {
+        font-family: DIN2014-ExtraBold, 'DIN 2014';
+        font-size: 99.1px;
+        font-weight: 700;
+      }
+
+      .cls-8 {
+        letter-spacing: 0em;
+      }
+
+      .cls-9 {
+        fill: none;
+        stroke: #595959;
+        stroke-miterlimit: 10;
+        stroke-width: 1.1px;
+      }
+
+      .cls-10 {
+        fill: #848484;
+        mix-blend-mode: darken;
+        opacity: .6;
+      }
+    </style>
+    <linearGradient id="_무제_그라디언트_272" data-name="무제 그라디언트 272" x1="960" y1="968.72" x2="960" y2="219.3" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset="1" stop-color="#e0e0e0"/>
+    </linearGradient>
+  </defs>
+  <g class="cls-7">
+    <g id="_레이어_1" data-name="레이어 1">
+      <g>
+        <rect class="cls-6" x="277.14" y="166.21" width="1365.71" height="747.58" rx="32.59" ry="32.59"/>
+        <path class="cls-10" d="M1642.86,201.36v18.35h-536.07l-67.17,67.77c-16.38,16.53-37.37,25.63-59.1,25.63H277.14v-115.38c0-17.4,12.18-31.51,27.21-31.51h1308.15c16.76,0,30.35,15.73,30.35,35.14Z"/>
+        <text class="cls-5" transform="translate(338.56 392.68)"><tspan class="cls-3" x="0" y="0">POSITION </tspan><tspan x="214.05" y="0">Design Intern</tspan></text>
+        <text class="cls-5" transform="translate(1068.374 392.6767)"><tspan class="cls-3" x="0" y="0">START DATE </tspan><tspan x="261.62" y="0">2026.12.06</tspan></text>
+        <text class="cls-2" transform="translate(332.58 557.84)"><tspan x="0" y="0">RESOURCE ACCESS</tspan><tspan x="0" y="132.84">MENTOR</tspan><tspan x="0" y="265.68">TRAINING</tspan></text>
+        <text class="cls-1" transform="translate(1292.4619 557.8373)"><tspan x="0" y="0">Limited</tspan><tspan x="119.55" y="132.84">None</tspan><tspan x="39.85" y="265.68">locked</tspan></text>
+        <text class="cls-4" transform="translate(333.85 275.52)"><tspan x="0" y="0">Initial </tspan><tspan class="cls-8" x="270.83" y="0">c</tspan><tspan x="314.14" y="0">ondition</tspan></text>
+        <line class="cls-9" x1="338.56" y1="474.75" x2="1566.7" y2="474.75"/>
+        <line class="cls-9" x1="338.56" y1="602.31" x2="1566.7" y2="602.31"/>
+        <line class="cls-9" x1="338.56" y1="729.87" x2="1566.7" y2="729.87"/>
+      </g>
+    </g>
+  </g>
+</svg>
