@@ -20,7 +20,13 @@
   }, true);
 
   function unlock(event) {
-    if (event.isTrusted) sounds.unlock();
+    if (!event.isTrusted) return;
+    sounds.unlock();
+
+    // Warm only the sound that is most likely to be needed next. Previously
+    // every effect was fetched and decoded during the initial page load.
+    if (event.type === 'pointerdown') sounds.preload('click');
+    if (event.type === 'keydown') sounds.preload('accessKey');
   }
 
   function createPlayer() {
@@ -46,8 +52,10 @@
       tryHarderRow: { file: 'universfield-system-notification-02-352442.mp3', volume: 0.48, offset: 0.045 }
     };
 
-    if (audio) {
-      for (const effect of Object.values(effects)) {
+    function loadEffect(name) {
+      const effect = effects[name];
+      if (!audio || !effect) return Promise.resolve(null);
+      if (!effect.buffer) {
         effect.buffer = fetch(new URL(effect.file, assetBase))
           .then(response => {
             if (!response.ok) throw new Error('Sound file unavailable');
@@ -56,10 +64,14 @@
           .then(bytes => audio.decodeAudioData(bytes))
           .catch(() => null);
       }
+      return effect.buffer;
     }
 
     let resuming;
     return {
+      preload(name) {
+        loadEffect(name);
+      },
       unlock() {
         if (audio?.state === 'suspended' && !resuming) {
           resuming = audio.resume().catch(() => {}).finally(() => {
@@ -72,7 +84,8 @@
 
         const requestedAt = performance.now();
         const effect = effects[name];
-        const buffer = await effect.buffer;
+        if (!effect) return;
+        const buffer = await loadEffect(name);
         await resuming;
         if (!buffer || signal?.aborted || audio.state !== 'running' || performance.now() - requestedAt > 350) return;
 
