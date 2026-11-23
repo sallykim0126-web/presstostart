@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>EFFORT — LEADERBOARD FOLDER</title>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  background: #aaa;
+  overflow: hidden;
+  touch-action: none;
+}
+
+#scroll {
+  height: 100vh;
+  position: relative;
+}
+
+#sticky {
+  position: fixed;
+  top: 0;
+  left: 0;
+
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+
+  overflow: hidden;
+  background: #dddddd;
+}
+
+/* 전체 작업 화면 */
+#scene {
+  position: absolute;
+  width: 1920px;
+  height: 1080px;
+
+  left: 50%;
+  top: 50%;
+
+  transform: translate(-50%, -50%) scale(var(--scale, 1));
+  transform-origin: center;
+
+  perspective: 1900px;
+  isolation: isolate;
+  overflow: hidden;
+
+  background: #ddd;
+}
+
+/* 배경은 추후 SVG 추가 가능 */
+#dark {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+
+  background: radial-gradient(
+    ellipse at 50% 48%,
+    rgba(0, 0, 0, .15),
+    rgba(0, 0, 0, .48)
+  );
+
+  opacity: 0;
+  pointer-events: none;
+}
+
+#group {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+/* 모든 SVG 공통 */
+.folder-svg {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1920px;
+  height: 1080px;
+
+  user-select: none;
+  pointer-events: none;
+}
+
+/* ========================================
+   리더보드 종이 — 32-03
+   ======================================== */
+
+#paper {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+
+  transform: translateX(0);
+}
+
+#paper.moveRight {
+  transform: translateX(1900px);
+  transition: transform 1.8s ease-in-out;
+}
+
+/* 종이 위 실제 순위 데이터 */
+#rankRows {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.rankCell {
+  position: absolute;
+  color: #242424;
+
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 18px;
+  font-weight: 400;
+
+  white-space: nowrap;
+  transform: translate(-50%, -50%);
+}
+
+.rankCell.you {
+  color: #1717dc;
+  font-weight: 700;
+}
+
+/* 종이 클릭 영역 */
+#paperHit {
+  position: absolute;
+  left: 650px;
+  top: 100px;
+  width: 630px;
+  height: 850px;
+
+  display: none;
+  cursor: pointer;
+}
+
+#paper.ready #paperHit {
+  display: block;
+}
+
+/* ========================================
+   폴더 앞면 — 32-01
+   ======================================== */
+
+#front {
+  z-index: 4;
+  transform-origin: 32% 10%;
+  backface-visibility: hidden;
+}
+
+/* ========================================
+   폴더 안쪽 — 32-02
+   ======================================== */
+
+#back {
+  position: absolute;
+  left: 0;
+  top: 0;
+
+  width: 1920px;
+  height: 1080px;
+
+  z-index: 3;
+
+  visibility: hidden;
+  transform-origin: 35% 30%;
+  transform-style: preserve-3d;
+
+  pointer-events: none;
+}
+
+#back img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform: scaleX(-1) scale(1.007);
+}
+
+/* 접히는 부분의 그림자 */
+#hinge {
+  position: absolute;
+
+  left: 645px;
+  top: 50px;
+
+  height: 950px;
+  width: 14px;
+
+  z-index: 3;
+  opacity: 0;
+
+  pointer-events: none;
+
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(0, 0, 0, .22),
+    transparent
+  );
+
+  filter: blur(6px);
+}
+
+#hint {
+  position: absolute;
+  left: 50%;
+  bottom: 30px;
+
+  transform: translateX(-50%);
+
+  z-index: 9;
+
+  color: #333;
+  font: 17px monospace;
+  letter-spacing: .13em;
+
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* ==========================================
+   ★ SVG 이미지 위치 / 크기 조절 ★
+   ========================================== */
+
+/* 32-01.svg — 폴더 앞표지 */
+#front {
+  left: -45px;
+  top: 8px;
+
+  width: 1920px;
+  height: 1080px;
+}
+
+/* 32-02.svg — 펼쳐지는 폴더 안쪽 */
+#back {
+  left: -93px;
+  top: 8px;
+
+  width: 1920px;
+  height: 1080px;
+}
+
+/* 32-03.svg — 안에 들어 있는 리더보드 종이 */
+#paper {
+  left: 0px;
+  top: 9px;
+
+  right: auto;
+  bottom: auto;
+
+  width: 1920px;
+  height: 1080px;
+}
+
+/* ★ 리더보드 숫자 표시 레이어 */
+#rankRows {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* 리더보드 종이의 불필요한 왼쪽 배경 숨기기 */
+#paper {
+  clip-path: inset(0 0 0 580px);
+}
+
+</style>
+<script src="../assets/project-sounds.js"></script>
+<script src="../assets/project-scroll-hint.js"></script>
+</head>
+
+<body>
+
+<section id="scroll">
+  <div id="sticky">
+    <div id="scene">
+
+      <!-- 배경은 추후 추가 -->
+
+      <div id="dark"></div>
+
+      <div id="group">
+
+        <!-- 처음부터 존재하는 리더보드 -->
+        <div id="paper">
+          <img
+  class="folder-svg"
+  src="../assets/32-03.png"
+  alt=""
+>
+
+        </div>
+
+        <!-- 폴더 안쪽 -->
+        <div id="back">
+          <img src="../assets/32-02.png" alt="">
+        </div>
+
+        <!-- 폴더 앞면 -->
+        <img
+  id="front"
+  class="folder-svg"
+  src="../assets/32-01.png"
+  alt=""
+>
+        <div id="hinge"></div>
+
+        <div id="rankRows"></div>
+
+      </div>
+
+      
+
+    </div>
+  </div>
+</section>
+
+<script>
+
+// ==========================================
+// ★ 여기서 위치 / 속도 조절 ★
+// ==========================================
+
+const SETTINGS = {
+
+  // 폴더가 열릴 때 전체 이동
+  START_X: 0,
+  END_X: 267,
+
+  // 폴더가 열리기 시작 / 끝나는 시점
+
+  // 배경 어두워지는 정도
+  DARK_MAX: 0.50,
+
+  // ======================================
+// ★ 32-03.png 리더보드 위치 조절 ★
+// ======================================
+
+RANK_START_Y: 270,
+RANK_GAP: 54,
+
+RANK_X: 710,        // ★ 순위 번호
+PLAYER_X: 783,      // PLAYER / YOU
+CLICK_X: 857,
+STARTING_X: 940,
+EFFICIENCY_X: 1045,
+EVENT_X: 1140,
+TIME_X: 1208,
+
+RANK_FONT_SIZE: 17,
+RANK_ROTATE: 3.3,
+RANK_MOVE_X: 0,
+RANK_MOVE_Y: 9,     // 숫자 전체 상하 이동
+
+
+};
+
+
+// ==========================================
+// 기존 Supabase 연결
+// ==========================================
+
+const SUPABASE_URL =
+  "https://vulpizivyyxsfwnbhsnr.supabase.co";
+
+const SUPABASE_PUBLISHABLE_KEY =
+  "sb_publishable_E7og2HYdBat7egSfzdUmGg_16175d4P";
+
+
+// ==========================================
+// 기본 요소
+// ==========================================
+
+const scene = document.getElementById("scene");
+const group = document.getElementById("group");
+
+const front = document.getElementById("front");
+const back = document.getElementById("back");
+
+const paper = document.getElementById("paper");
+const paperHit = document.getElementById("paperHit");
+
+const hinge = document.getElementById("hinge");
+const dark = document.getElementById("dark");
+
+
+const rankRows = document.getElementById("rankRows");
+
+// 리더보드 숫자 전체 이동 + 회전
+rankRows.style.transform =
+  `translate(${SETTINGS.RANK_MOVE_X}px, ${SETTINGS.RANK_MOVE_Y}px)
+   rotate(${SETTINGS.RANK_ROTATE}deg)`;
+
+// 회전 기준점
+rankRows.style.transformOrigin =
+  `${SETTINGS.PLAYER_X}px ${SETTINGS.RANK_START_Y}px`;
+
+const clamp = v => Math.min(1, Math.max(0, v));
+
+const smooth = v => {
+  v = clamp(v);
+  return v * v * (3 - 2 * v);
+};
+
+// ==========================================
+// 화면 크기 자동 조절
+// ==========================================
+
+function scaleScene() {
+
+  const value = Math.max(
+    innerWidth / 1920,
+    innerHeight / 1080
+  );
+
+  scene.style.setProperty("--scale", value);
+}
+
+window.addEventListener("resize", scaleScene);
+scaleScene();
+
+
+// ==========================================
+// 폴더 넘기기 애니메이션
+// ==========================================
+
+function draw(t) {
+
+  const x =
+    SETTINGS.START_X +
+    (SETTINGS.END_X - SETTINGS.START_X) * smooth(t);
+
+  group.style.transform =
+    `translate3d(${x}px, 0, 0)`;
+
+  dark.style.opacity =
+    smooth(t) * SETTINGS.DARK_MAX;
+
+  hinge.style.opacity =
+    Math.sin(t * Math.PI) * 0.6;
+
+  if (t <= 0.5) {
+
+    const u = smooth(t * 2);
+
+    front.style.visibility = "visible";
+    back.style.visibility = "hidden";
+
+    front.style.transform =
+      `rotateY(${-89.9 * u}deg)`;
+
+  } else {
+
+    const u = smooth((t - 0.5) * 2);
+
+    front.style.visibility = "hidden";
+    back.style.visibility = "visible";
+
+    back.style.transform =
+      `translateZ(0px) rotateY(${-90 - 90 * u}deg)`;
+  }
+
+  // 폴더가 충분히 열린 뒤 종이 클릭 가능
+  rankRows.style.opacity = smooth((t - 0.72) / 0.1);
+
+  
+}
+
+/* Scroll opens the cover and plays the matching span of the 1.5-second sound. */
+const FOLDER_OPEN_MS = 1500;
+let folderProgress = 0;
+let requestedProgress = 0;
+let animatingFolder = false;
+
+function animateFolder() {
+  const from = folderProgress;
+  const to = requestedProgress;
+  const duration = (to - from) * FOLDER_OPEN_MS;
+  const startedAt = performance.now();
+  animatingFolder = true;
+  window.projectSounds?.play("folder", { fromProgress: from, toProgress: to });
+
+  function tick(now) {
+    const fraction = clamp((now - startedAt) / duration);
+    folderProgress = from + (to - from) * fraction;
+    draw(folderProgress);
+
+    if (fraction < 1) {
+      requestAnimationFrame(tick);
+      return;
+    }
+
+    animatingFolder = false;
+    if (requestedProgress > folderProgress) {
+      animateFolder();
+    } else if (folderProgress === 1) {
+      setTimeout(() => {
+        if (window.parent !== window) {
+          window.parent.postMessage({ type: "NEXT_PAGE" }, window.location.origin);
+        } else {
+          window.location.href = "13.html";
+        }
+      }, 2000);
+    }
+  }
+
+  requestAnimationFrame(tick);
+}
+
+function scrollFolder(pixels) {
+  if (pixels <= 0 || requestedProgress === 1) return;
+  requestedProgress = clamp(requestedProgress + pixels / window.innerHeight);
+  if (!animatingFolder) animateFolder();
+}
+
+draw(0);
+window.installProjectScrollHint(() => requestedProgress === 0);
+
+window.addEventListener("wheel", event => {
+  if (event.ctrlKey) return;
+  const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? window.innerHeight : 1;
+  scrollFolder(event.deltaY * unit);
+}, { passive: true });
+
+let lastTouchY;
+window.addEventListener("touchstart", event => {
+  lastTouchY = event.touches[0].clientY;
+}, { passive: true });
+window.addEventListener("touchmove", event => {
+  const nextY = event.touches[0].clientY;
+  if (lastTouchY !== undefined) scrollFolder(lastTouchY - nextY);
+  lastTouchY = nextY;
+}, { passive: true });
+
+window.addEventListener("keydown", event => {
+  if (!["ArrowDown", "PageDown", " "].includes(event.key)) return;
+  event.preventDefault();
+  scrollFolder(window.innerHeight * (event.key === "ArrowDown" ? 0.15 : 1));
+});
+
+
+// ==========================================
+// ★ 리더보드 숫자 출력 ★
+// ==========================================
+
+function addCell(value, x, y, isYou = false) {
+
+  const cell = document.createElement("span");
+
+  cell.className =
+    "rankCell" + (isYou ? " you" : "");
+
+  cell.textContent = String(value ?? "");
+
+  cell.style.left = x + "px";
+  cell.style.top = y + "px";
+
+  cell.style.fontSize =
+    SETTINGS.RANK_FONT_SIZE + "px";
+
+  rankRows.appendChild(cell);
+}
+
+
+// 실제 순위 데이터를 32-03 종이에 작성
+// ======================================
+// ★ 32-03.png에 맞춘 리더보드 출력 ★
+// ======================================
+// ======================================
+// ★ 순위 생략 + 본인 순위 표시 ★
+// ======================================
+
+function renderRanks(data) {
+
+  rankRows.replaceChildren();
+
+  const sorted = [...data].sort(
+    (a, b) => Number(a.rank) - Number(b.rank)
+  );
+
+  // 입력한 코드에 해당하는 사용자 찾기
+  const mine = sorted.find(item => item.is_you === true);
+
+  let selected = [];
+
+  // 본인이 10위 밖에 있다면
+  if (mine && Number(mine.rank) > 10) {
+
+  // 1~9위 + ... + 본인 순위
+  selected = [
+    ...sorted.slice(0, 9),
+    mine
+  ];
+
+} else {
+
+  // 본인이 10위 이내이거나 코드가 없는 경우
+  selected = sorted.slice(0, 10);
+
+}
+
+  // 중간에 생략된 순위가 있으면 ... 추가
+  const display = [];
+  let previousRank = 0;
+
+  selected.forEach(item => {
+
+    const currentRank = Number(item.rank);
+
+    if (
+      previousRank !== 0 &&
+      currentRank > previousRank + 1
+    ) {
+      display.push({ gap: true });
+    }
+
+    display.push(item);
+    previousRank = currentRank;
+
+  });
+
+  // ======================================
+  // 종이에 출력
+  // ======================================
+
+  display.forEach((item, index) => {
+
+    const y =
+      SETTINGS.RANK_START_Y +
+      index * SETTINGS.RANK_GAP;
+
+    // 생략된 순위
+    if (item.gap) {
+
+      addCell(
+        "…",
+        SETTINGS.RANK_X,
+        y
+      );
+
+      return;
+    }
+
+    const isYou = item.is_you === true;
+
+    const playerLabel = isYou
+      ? "YOU"
+      : "P" + String(item.rank).padStart(2, "0");
+
+    // 1. RANK
+    addCell(
+      item.rank,
+      SETTINGS.RANK_X,
+      y,
+      isYou
+    );
+
+    // 2. PLAYER
+    addCell(
+      playerLabel,
+      SETTINGS.PLAYER_X,
+      y,
+      isYou
+    );
+
+    // 3. CLICK
+    addCell(
+      item.clicks,
+      SETTINGS.CLICK_X,
+      y,
+      isYou
+    );
+
+    // 4. STARTING
+    addCell(
+      item.starting,
+      SETTINGS.STARTING_X,
+      y,
+      isYou
+    );
+
+    // 5. EFFICIENCY
+    addCell(
+      Number(item.efficiency).toFixed(2),
+      SETTINGS.EFFICIENCY_X,
+      y,
+      isYou
+    );
+
+    // 6. EVENT
+    addCell(
+      `+${item.positive_events}/-${item.negative_events}`,
+      SETTINGS.EVENT_X,
+      y,
+      isYou
+    );
+
+    // 7. TIME
+    addCell(
+      "60s",
+      SETTINGS.TIME_X,
+      y,
+      isYou
+    );
+
+  });
+
+}
+
+
+// ==========================================
+// Supabase에서 실제 순위 불러오기
+// ==========================================
+
+async function loadRanks() {
+
+  const savedCode =
+    sessionStorage.getItem(
+      "presto_leaderboard_code"
+    ) || "";
+
+  try {
+
+    const response = await fetch(
+      SUPABASE_URL +
+      "/rest/v1/rpc/get_public_leaderboard",
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": SUPABASE_PUBLISHABLE_KEY,
+          "Authorization":
+            "Bearer " + SUPABASE_PUBLISHABLE_KEY
+        },
+
+        body: JSON.stringify({
+          p_access_code:
+            savedCode.trim().toUpperCase() || null
+        })
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
+
+    const data = await response.json();
+
+    if (!Array.isArray(data)) {
+      throw new Error("Invalid leaderboard data");
+    }
+
+    renderRanks(data);
+
+  } catch (error) {
+    console.error("리더보드 로딩 실패:", error);
+  }
+}
+
+// ★ 페이지 시작과 동시에 데이터 준비
+loadRanks();
+
+
+
+</script>
+
+</body>
+</html>

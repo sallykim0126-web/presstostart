@@ -1,0 +1,441 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0">
+
+<title>08 — SCROLL NOTES</title>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  background: #000;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/* 기존 08 긴 이미지 */
+.scroll-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* 19번 다음 화면 */
+#next-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  background: #000;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  visibility: hidden;
+}
+
+#next-screen.active {
+  visibility: visible;
+}
+
+#next-screen img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* 기존 03 페이지와 동일한 눈 깜박임 레이어 */
+#blink {
+  position: fixed;
+  inset: -2px;
+  width: calc(100% + 4px);
+  height: calc(100% + 4px);
+  z-index: 9999;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+#blink svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+</style>
+<script src="../assets/project-sounds.js"></script>
+<script src="../assets/project-scroll-hint.js"></script>
+</head>
+
+<body>
+
+<!-- 기존 08 스크롤 이미지 -->
+<img
+  class="scroll-image"
+  src="./17_light.svg"
+  alt=""
+  draggable="false"
+>
+
+<!-- 다음 장면 -->
+<div id="next-screen">
+  <img src="./19.svg" alt="">
+</div>
+
+<!-- 03 페이지의 곡선 눈꺼풀 구조 -->
+<div id="blink" aria-hidden="true">
+  <svg viewBox="0 0 1000 600"
+       preserveAspectRatio="none">
+
+    <defs>
+      <filter id="edgeBlur"
+              x="-15%" y="-30%"
+              width="130%" height="160%">
+        <feGaussianBlur stdDeviation="17"/>
+      </filter>
+    </defs>
+
+    <rect id="topCover"
+          x="-60" y="-60"
+          width="1120" height="60"
+          fill="black"/>
+
+    <rect id="bottomCover"
+          x="-60" y="600"
+          width="1120" height="60"
+          fill="black"/>
+
+    <path id="lidTop"
+          fill="black"
+          filter="url(#edgeBlur)"/>
+
+    <path id="lidBottom"
+          fill="black"
+          filter="url(#edgeBlur)"/>
+
+  </svg>
+</div>
+
+<script>
+(() => {
+
+  /* 03 페이지와 동일한 깜박임 속도 */
+  const CLOSE_MS = 850;
+  const HOLD_MS = 200;
+  const OPEN_MS = 950;
+
+  const blink = document.getElementById('blink');
+  const lidTop = document.getElementById('lidTop');
+  const lidBottom = document.getElementById('lidBottom');
+  const topCover = document.getElementById('topCover');
+  const bottomCover = document.getElementById('bottomCover');
+
+  const nextScreen =
+    document.getElementById('next-screen');
+
+  let isNextScreen = false;
+  let busy = false;
+
+
+/* 화면 등장 후 스크롤 잠금 */
+const SCROLL_DELAY = 1000; // 1초
+
+let scrollReadyAt = Infinity;
+
+// 이미지까지 로딩된 후 1초 대기
+window.addEventListener("load", () => {
+  scrollReadyAt = performance.now() + SCROLL_DELAY;
+});
+
+function canScroll() {
+  return performance.now() >= scrollReadyAt;
+}
+
+
+  const clamp = n =>
+    Math.max(0, Math.min(1, n));
+
+  const ease = t => {
+    t = clamp(t);
+    return t * t * (3 - 2 * t);
+  };
+
+  /* 03 페이지의 눈꺼풀 곡선 그대로 */
+  function drawEye(p) {
+    p = clamp(p);
+
+    const edge = 300 * p;
+    const curve = 190 * Math.sin(Math.PI * p);
+    const bottom = 600 - edge;
+    const fade = Math.min(
+      1, Math.max(0, p / 0.12)
+    );
+
+    lidTop.setAttribute(
+      'd',
+      `M-100 -100 H1100 V${edge} Q500 ${edge + curve} -100 ${edge} Z`
+    );
+
+    lidBottom.setAttribute(
+      'd',
+      `M-100 700 H1100 V${bottom} Q500 ${bottom - curve} -100 ${bottom} Z`
+    );
+
+    for (const el of [
+      lidTop,
+      lidBottom,
+      topCover,
+      bottomCover
+    ]) {
+      el.style.opacity = fade;
+    }
+
+    topCover.setAttribute(
+      'height',
+      String(60 + Math.max(0, edge - 60))
+    );
+
+    bottomCover.setAttribute(
+      'y',
+      String(Math.min(600, bottom + 60))
+    );
+
+    bottomCover.setAttribute(
+      'height',
+      String(
+        660 - Math.min(600, bottom + 60)
+      )
+    );
+  }
+
+  /* 03 페이지의 부드러운 눈 움직임 */
+  function tween(from, to, duration) {
+    if (from === 0 && to === 1) window.projectSounds?.play('blink');
+    return new Promise(resolve => {
+      const start = performance.now();
+
+      function tick(now) {
+        const t = Math.min(
+          1,
+          (now - start) / duration
+        );
+
+        drawEye(
+          from + (to - from) * ease(t)
+        );
+
+        if (t < 1) {
+          requestAnimationFrame(tick);
+        } else {
+          resolve();
+        }
+      }
+
+      requestAnimationFrame(tick);
+    });
+  }
+
+  function pause(ms) {
+    return new Promise(resolve =>
+      setTimeout(resolve, ms)
+    );
+  }
+
+  function goTo09() {
+  if (busy || !isNextScreen) return;
+
+  busy = true;
+
+  // index.html에서 실행 중이면
+  // 기존 페이지 전환 눈깜빡임 사용
+  if (window.parent !== window) {
+    window.parent.postMessage(
+      { type: "NEXT_PAGE" },
+      "*"
+    );
+  } else {
+    // 08 파일만 단독 실행했을 때
+    blink.style.visibility = "visible";
+
+    tween(0, 1, CLOSE_MS).then(() => {
+      window.location.href = "09_grit.html";
+    });
+  }
+}
+
+  /* 08 스크롤 마지막 지점 */
+  function isAtBottom() {
+    return (
+      window.scrollY + window.innerHeight >=
+      document.documentElement.scrollHeight - 5
+    );
+  }
+
+  const BOTTOM_DELAY_MS = 2000;
+  let bottomReachedAt = null;
+
+  function updateBottomReachedAt() {
+    if (!isAtBottom()) {
+      bottomReachedAt = null;
+    } else if (bottomReachedAt === null) {
+      bottomReachedAt = performance.now();
+    }
+  }
+
+  let startedNotesScroll = window.scrollY > 0;
+  let lastNotesScrollAt = -Infinity;
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 0) startedNotesScroll = true;
+    updateBottomReachedAt();
+
+    if (!canScroll() || busy || isNextScreen) return;
+    const now = performance.now();
+    if (now - lastNotesScrollAt >= 500) window.projectSounds?.play('notesScroll');
+    lastNotesScrollAt = now;
+  }, { passive: true });
+  window.addEventListener('resize', updateBottomReachedAt);
+  window.addEventListener('load', updateBottomReachedAt);
+
+  /* 눈 깜박임 + 19 화면 전환 */
+  async function blinkTransition(showNext) {
+    if (busy || isNextScreen === showNext) return;
+
+    if (showNext) {
+      updateBottomReachedAt();
+      if (bottomReachedAt === null ||
+          performance.now() - bottomReachedAt < BOTTOM_DELAY_MS) {
+        return;
+      }
+    }
+
+    busy = true;
+    blink.style.visibility = 'visible';
+
+    // 1. 곡선 눈꺼풀이 닫힘
+    await tween(0, 1, CLOSE_MS);
+
+    // 2. 완전히 감긴 상태에서 화면 교체
+    nextScreen.classList.toggle(
+      'active',
+      showNext
+    );
+
+    isNextScreen = showNext;
+
+    await pause(HOLD_MS);
+
+    // 3. 곡선 눈꺼풀이 열림
+    await tween(1, 0, OPEN_MS);
+
+    blink.style.visibility = 'hidden';
+    busy = false;
+  }
+
+  /* 마우스 / 트랙패드 스크롤 */
+  window.addEventListener('wheel', e => {
+
+    // 화면 등장 후 1초 동안 스크롤 차단
+if (!canScroll()) {
+  e.preventDefault();
+  return;
+}
+
+    if (busy) {
+      e.preventDefault();
+      return;
+    }
+
+    if (isNextScreen) {
+  e.preventDefault();
+
+  if (e.deltaY < -15) {
+    // 위로 스크롤 → 08로 돌아가기
+    blinkTransition(false);
+  }
+
+  if (e.deltaY > 15) {
+    // 아래로 스크롤 → 09로 넘어가기
+    goTo09();
+  }
+
+  return;
+}
+
+    // 08 끝에서 아래로 스크롤하면 전환
+    if (isAtBottom() && e.deltaY > 0) {
+      e.preventDefault();
+      blinkTransition(true);
+    }
+
+  }, { passive: false });
+
+  /* 터치 스크롤 */
+  let touchStartY = 0;
+
+  window.addEventListener('touchstart', e => {
+    touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+
+  window.addEventListener('touchend', e => {
+    if (busy) return;
+
+    const diff =
+      touchStartY - e.changedTouches[0].clientY;
+
+    if (Math.abs(diff) < 40) return;
+
+    if (isNextScreen && diff < 0) {
+      blinkTransition(false);
+    } else if (
+      !isNextScreen &&
+      diff > 0 &&
+      isAtBottom()
+    ) {
+      blinkTransition(true);
+    }
+  }, { passive: true });
+
+  /* 키보드 */
+  window.addEventListener('keydown', e => {
+    const down =
+      ['ArrowDown', 'PageDown', ' '].includes(e.key);
+
+    const up =
+      ['ArrowUp', 'PageUp'].includes(e.key);
+
+    if (busy) {
+      if (down || up) e.preventDefault();
+      return;
+    }
+
+    if (isNextScreen) {
+      if (down || up) e.preventDefault();
+      if (up) blinkTransition(false);
+    } else if (down && isAtBottom()) {
+      e.preventDefault();
+      blinkTransition(true);
+    }
+  });
+
+  /* 처음에는 눈꺼풀이 열려 있는 상태 */
+  drawEye(0);
+
+  window.installProjectScrollHint(() =>
+    !busy && canScroll() &&
+    (isNextScreen || !startedNotesScroll)
+  );
+})();
+</script>
+
+</body>
+</html>

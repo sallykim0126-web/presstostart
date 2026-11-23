@@ -1,0 +1,116 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+    }
+
+    #scene {
+      position: relative;
+      width: 100vw;
+      height: 100dvh;
+      overflow: hidden;
+      background: #000;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    #slide16 {
+      display: none;
+    }
+  </style>
+<script src="../assets/project-sounds.js"></script>
+<script src="../assets/project-scroll-hint.js"></script>
+</head>
+
+<body>
+  <div id="scene">
+    <img id="slide15" class="slide"
+         src="../assets/12-15.svg" alt="">
+
+    <img id="slide16" class="slide"
+         src="../assets/12-16.svg" alt="">
+  </div>
+
+ 
+<script>
+  const BLINK_OPEN_TIME = 550;
+  const SLIDE15_TIME = 1100;
+
+  const slide15 = document.getElementById('slide15');
+  const slide16 = document.getElementById('slide16');
+
+  let canScroll = false;
+  let isTransitioning = false;
+
+  // 15번 화면 → 0.8초 후 16번 화면
+  setTimeout(() => {
+    slide15.style.display = 'none';
+    slide16.style.display = 'block';
+
+    setTimeout(() => {
+  canScroll = true;
+}, 700);
+  }, BLINK_OPEN_TIME + SLIDE15_TIME);
+
+  // 16번 화면에서 아래로 스크롤하면 05로 이동
+  window.addEventListener('wheel', (e) => {
+    if (e.deltaY <= 0) return;
+    if (!canScroll || isTransitioning) return;
+
+    isTransitioning = true;
+
+    // index.html에서 눈 깜빡임 + 다음 페이지 전환
+    window.parent.postMessage(
+      { type: 'NEXT_PAGE' },
+      '*'
+    );
+  }, { passive: true });
+
+  // 터치스크린에서도 위로 밀면 다음 페이지
+  let touchStartY = 0;
+
+  window.addEventListener('touchstart', (e) => {
+    touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+
+  window.addEventListener('touchend', (e) => {
+    const diff = touchStartY - e.changedTouches[0].clientY;
+
+    if (diff > 40 && canScroll && !isTransitioning) {
+      isTransitioning = true;
+
+      window.parent.postMessage(
+        { type: 'NEXT_PAGE' },
+        '*'
+      );
+    }
+  }, { passive: true });
+
+window.installProjectScrollHint(() => canScroll && !isTransitioning);
+</script>
+
+
+  </script>
+</body>
+</html>

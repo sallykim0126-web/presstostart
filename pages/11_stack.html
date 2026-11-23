@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<script>
+  if (new URLSearchParams(location.search).get("blink") === "sequence") {
+    document.documentElement.classList.add("sequence-blink-entry");
+  }
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EFFORT — STACK</title>
+
+<style>
+  * {
+    box-sizing: border-box;
+  }
+
+  html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #eeeeee;
+  }
+
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* 전체 화면 */
+#scene {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: #eeeeee;
+}
+
+/* 공통 이미지 설정 */
+#scene img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* 배경은 항상 화면 전체에 채우기 */
+#scene #bg {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 1;
+}
+
+#stack {
+  position: absolute;
+  left: 50%;
+  top: 52%;
+
+  width: min(100vw, 177.7778vh);
+  aspect-ratio: 16 / 9;
+
+  transform: translate(-50%, -50%) scale(1.5);
+  overflow: visible;
+  z-index: 2;
+}
+
+#stack img {
+  position: absolute;
+  inset: 0;
+
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+  #bg { z-index: 1; }
+  #obj02 { z-index: 2; }
+  #obj03 { z-index: 3; opacity: 0; }
+  #obj04 { z-index: 4; opacity: 0; }
+  #obj05 { z-index: 5; opacity: 0; }
+
+  #drawCanvas{
+  position:absolute;
+  inset:0;
+
+  width:100%;
+  height:100%;
+
+  z-index:10;
+
+  pointer-events:none;
+}
+
+.hand{
+  position:absolute;
+
+  /* 처음 손 위치 */
+  left:58vw;
+  top:52vh;
+
+  /* 손 크기 */
+  width:34vw;
+
+  z-index:20;
+
+  cursor:grab;
+
+  user-select:none;
+  -webkit-user-drag:none;
+
+  touch-action:none;
+}
+
+.hand.dragging{
+  cursor:grabbing;
+}
+
+/* =====================================
+   중간 32-1.5 화면
+   ===================================== */
+
+#intro15 {
+  position: fixed !important;
+  inset: 0 !important;
+
+  width: 100vw !important;
+  height: 100vh !important;
+
+  object-fit: cover !important;
+
+  z-index: 100 !important;
+
+  display: none;
+
+  pointer-events: none;
+}
+
+
+/* =====================================
+   눈 깜박임
+   ===================================== */
+
+#blink {
+  position: fixed;
+  inset: -2px;
+
+  width: calc(100% + 4px);
+  height: calc(100% + 4px);
+
+  z-index: 9999;
+
+  pointer-events: none;
+
+  visibility: hidden;
+}
+
+.sequence-blink-entry #blink {
+  visibility: visible;
+  background: #000;
+}
+
+#blink svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+</style>
+<script src="../assets/project-sounds.js"></script>
+<script src="../assets/project-scroll-hint.js"></script>
+</head>
+
+<body>
+
+<div id="scene">
+
+  <!-- 전체 화면 배경 -->
+  <img id="bg" src="../assets/30-01.svg">
+
+  <!-- 원래 배치를 유지하는 오브제들 -->
+  <div id="stack">
+    <img id="obj02" src="../assets/30-02.svg">
+    <img id="obj03" src="../assets/30-03.svg">
+    <img id="obj04" src="../assets/30-04.svg">
+    <img id="obj05" src="../assets/30-05.svg">
+  </div>
+
+  <!-- 첫 번째 깜박임 후 나타나는 화면 -->
+<img
+  id="intro15"
+  src="../assets/32-1.5.svg"
+  alt=""
+>
+
+</div>
+
+
+<!-- 눈 깜박임 -->
+<div id="blink" aria-hidden="true">
+
+  <svg
+    viewBox="0 0 1000 600"
+    preserveAspectRatio="none"
+  >
+
+    <defs>
+      <filter
+        id="edgeBlur"
+        x="-15%"
+        y="-30%"
+        width="130%"
+        height="160%"
+      >
+        <feGaussianBlur stdDeviation="17"/>
+      </filter>
+    </defs>
+
+    <rect
+      id="topCover"
+      x="-60"
+      y="-60"
+      width="1120"
+      height="60"
+      fill="black"
+    />
+
+    <rect
+      id="bottomCover"
+      x="-60"
+      y="600"
+      width="1120"
+      height="60"
+      fill="black"
+    />
+
+    <path
+      id="lidTop"
+      fill="black"
+      filter="url(#edgeBlur)"
+    />
+
+    <path
+      id="lidBottom"
+      fill="black"
+      filter="url(#edgeBlur)"
+    />
+
+  </svg>
+
+</div>
+
+
+
+
+
+
+<script>
+
+// ==========================================
+// ★ 여기서 위치와 애니메이션 조절 ★
+// ==========================================
+
+// 원본 SVG 크기
+const CANVAS_W = 1920;
+const CANVAS_H = 1080;
+
+// 이미지별 위치 및 크기
+const POSITION = {
+
+  "01": {
+    x: 0,
+    y: 0,
+    scale: 1,
+    rotate: 0
+  },
+
+  "02": {
+    x: 0,
+    y: 0,
+    scale: 1,
+    rotate: 0
+  },
+
+  "03": {
+    x: 0,
+    y: 0,
+    scale: 1,
+    rotate: 0
+  },
+
+  "04": {
+    x: 0,
+    y: 0,
+    scale: 1,
+    rotate: 0
+  },
+
+  "05": {
+    x: 0,
+    y: 130,
+    scale: 1,
+    rotate: 0
+  }
+
+};
+
+// 떨어지는 애니메이션
+const DROP_MS = 750;         // 떨어지는 시간
+const DROP_DISTANCE = 0.7;   // 시작 높이 (화면 높이 비율)
+const BOUNCE = 25;           // 착지 시 튀어 오르는 정도
+
+// 스크롤 한 번을 구분하는 시간
+const SCROLL_GAP = 400;
+
+
+// ==========================================
+// 기본 설정
+// ==========================================
+
+const scene = document.getElementById("stack");
+
+const objects = {
+  "01": document.getElementById("bg"),
+  "02": document.getElementById("obj02"),
+  "03": document.getElementById("obj03"),
+  "04": document.getElementById("obj04"),
+  "05": document.getElementById("obj05")
+};
+
+const order = ["03", "04", "05"];
+
+let current = 0;
+let busy = false;
+
+/* 0 = 처음 한 장
+   1 = 32-1.5
+   2 = 파일 쌓기 시작 가능
+*/
+let introStage = 0;
+
+let blinkBusy = false;
+
+
+/* 11 → 11.5 페이지 전환 설정 */
+
+let lastDropFinishedAt = null;
+let nextPageRequested = false;
+
+// 마지막 오브젝트 착지 후 최소 대기 시간
+const NEXT_PAGE_DELAY = 600;
+
+async function requestNextPage() {
+
+  if (nextPageRequested) return;
+  if (busy || current < order.length) return;
+
+  if (
+    lastDropFinishedAt === null ||
+    performance.now() - lastDropFinishedAt < NEXT_PAGE_DELAY
+  ) return;
+
+  nextPageRequested = true;
+
+  // index.html 안에서 실행 중일 때
+  if (window.parent !== window) {
+
+    window.parent.postMessage(
+      { type: "NEXT_PAGE" },
+      "*"
+    );
+
+  } else {
+
+    // 11_stack.html을 단독 실행하는 경우
+    blinkBusy = true;
+    drawEye(0);
+    blink.style.visibility = "visible";
+    await eyeTween(0, 1, BLINK_CLOSE_MS);
+    await blinkPause(BLINK_HOLD_MS);
+    window.location.href = "11.5.html?blink=stack";
+
+  }
+}
+
+
+let scrollArmed = true;
+let scrollTimer = null;
+let ready = true;
+
+
+// ==========================================
+// 위치 계산
+// ==========================================
+
+function getPosition(id) {
+  const p = POSITION[id];
+
+  return {
+    x: p.x / CANVAS_W * scene.clientWidth,
+    y: p.y / CANVAS_H * scene.clientHeight,
+    scale: p.scale,
+    rotate: p.rotate
+  };
+}
+
+function makeTransform(p, extraY = 0) {
+  return `
+    translate(${p.x}px, ${p.y + extraY}px)
+    rotate(${p.rotate}deg)
+    scale(${p.scale})
+  `;
+}
+
+function updatePositions() {
+  Object.keys(objects).forEach(id => {
+    const p = getPosition(id);
+    objects[id].style.transform = makeTransform(p);
+  });
+}
+
+updatePositions();
+
+window.addEventListener("resize", updatePositions);
+
+/* =====================================
+   눈 깜박임
+   ===================================== */
+
+const BLINK_CLOSE_MS = 550;
+const BLINK_HOLD_MS = 150;
+const BLINK_OPEN_MS = 550;
+
+
+function blinkClamp(n) {
+  return Math.max(
+    0,
+    Math.min(1, n)
+  );
+}
+
+
+function blinkEase(t) {
+
+  t = blinkClamp(t);
+
+  return (
+    t *
+    t *
+    (3 - 2 * t)
+  );
+}
+
+
+function drawEye(p) {
+
+  p = blinkClamp(p);
+
+  const edge =
+    300 * p;
+
+  const curve =
+    190 *
+    Math.sin(
+      Math.PI * p
+    );
+
+  const bottom =
+    600 - edge;
+
+  const fade =
+    Math.min(
+      1,
+      Math.max(
+        0,
+        p / 0.12
+      )
+    );
+
+
+  lidTop.setAttribute(
+    "d",
+    `M-100 -100
+     H1100
+     V${edge}
+     Q500 ${edge + curve} -100 ${edge}
+     Z`
+  );
+
+
+  lidBottom.setAttribute(
+    "d",
+    `M-100 700
+     H1100
+     V${bottom}
+     Q500 ${bottom - curve} -100 ${bottom}
+     Z`
+  );
+
+
+  [
+    lidTop,
+    lidBottom,
+    topCover,
+    bottomCover
+  ].forEach(el => {
+
+    el.style.opacity =
+      fade;
+
+  });
+
+
+  topCover.setAttribute(
+    "height",
+    String(
+      60 +
+      Math.max(
+        0,
+        edge - 60
+      )
+    )
+  );
+
+
+  bottomCover.setAttribute(
+    "y",
+    String(
+      Math.min(
+        600,
+        bottom + 60
+      )
+    )
+  );
+
+
+  bottomCover.setAttribute(
+    "height",
+    String(
+      660 -
+      Math.min(
+        600,
+        bottom + 60
+      )
+    )
+  );
+
+
+  /* 완전히 닫힐 때 틈 없애기 */
+  blink.style.backgroundColor =
+    p >= 0.985
+      ? "#000"
+      : "transparent";
+}
+
+
+function eyeTween(
+  from,
+  to,
+  duration
+) {
+  if (from === 0 && to === 1) window.projectSounds?.play('blink');
+
+  return new Promise(
+    resolve => {
+
+      const start =
+        performance.now();
+
+
+      function tick(now) {
+
+        const t =
+          Math.min(
+            1,
+            (now - start) /
+            duration
+          );
+
+
+        drawEye(
+          from +
+          (to - from) *
+          blinkEase(t)
+        );
+
+
+        if (t < 1) {
+
+          requestAnimationFrame(
+            tick
+          );
+
+        } else {
+
+          resolve();
+
+        }
+
+      }
+
+
+      requestAnimationFrame(
+        tick
+      );
+
+    }
+  );
+}
+
+
+function blinkPause(ms) {
+
+  return new Promise(
+    resolve =>
+      setTimeout(
+        resolve,
+        ms
+      )
+  );
+}
+
+
+/* 화면을 교체하면서 깜박이기 */
+
+async function blinkChange(
+  changeScene
+) {
+
+  if (blinkBusy) return;
+
+  blinkBusy = true;
+  blink.style.visibility =
+    "visible";
+
+
+  /* 눈 감기 */
+  await eyeTween(
+    0,
+    1,
+    BLINK_CLOSE_MS
+  );
+
+
+  /* 완전히 감겼을 때 화면 변경 */
+  changeScene();
+
+
+  await blinkPause(
+    BLINK_HOLD_MS
+  );
+
+
+  /* 눈 뜨기 */
+  await eyeTween(
+    1,
+    0,
+    BLINK_OPEN_MS
+  );
+
+
+  blink.style.visibility =
+    "hidden";
+
+  blink.style.backgroundColor =
+    "transparent";
+
+  blinkBusy = false;
+}
+
+
+// ==========================================
+// 오브제 떨어지는 애니메이션
+// ==========================================
+
+
+async function dropNext() {
+
+  if (busy || !ready || current >= order.length) {
+    return;
+  }
+
+  busy = true;
+
+  const id = order[current];
+  current++;
+
+  const element = objects[id];
+  const p = getPosition(id);
+
+  const distance = scene.clientHeight * DROP_DISTANCE;
+  const bounce = BOUNCE / CANVAS_H * scene.clientHeight;
+
+  const finalTransform = makeTransform(p);
+
+  element.style.transform = finalTransform;
+  element.style.opacity = "1";
+
+
+  // ==========================================
+  // ★ 회색 파일 움직임 설정 ★
+  // ==========================================
+
+  const GRAY_UP = 40; // 위로 올라가는 거리 (원본 SVG 기준 px)
+
+  // ==========================================
+  // 1. 새 파일 떨어지는 애니메이션
+  // ==========================================
+
+  const dropAnimation = element.animate(
+    [
+      {
+        transform: makeTransform(p, -distance),
+        opacity: 1,
+        offset: 0
+      },
+      {
+        transform: makeTransform(p, bounce),
+        opacity: 1,
+        offset: 0.75
+      },
+      {
+        transform: makeTransform(p, -bounce * 0.4),
+        opacity: 1,
+        offset: 0.90
+      },
+      {
+        transform: finalTransform,
+        opacity: 1,
+        offset: 1
+      }
+    ],
+    {
+      duration: DROP_MS,
+      easing: "linear",
+      fill: "both"
+    }
+  );
+
+
+  // ==========================================
+  // 2. 회색 파일은 첫 번째에만 위로 이동
+  // ==========================================
+
+  let grayAnimation = null;
+  let grayTarget = "";
+
+  if (id === "03") {
+
+    const gray = objects["02"];
+
+    const lift =
+      GRAY_UP / CANVAS_H * scene.clientHeight;
+
+    grayTarget = `0px -${lift}px`;
+
+    grayAnimation = gray.animate(
+      [
+        {
+          translate: "0px 0px",
+          offset: 0
+        },
+        {
+          translate: "0px 0px",
+          offset: 0.30
+        },
+        {
+          translate: grayTarget,
+          offset: 1
+        }
+      ],
+      {
+        duration: DROP_MS,
+        easing: "ease-out",
+        fill: "forwards"
+      }
+    );
+  }
+
+
+  // ==========================================
+  // 3. 애니메이션 종료 후 위치 유지
+  // ==========================================
+
+  await Promise.allSettled([
+    dropAnimation.finished,
+    ...(grayAnimation ? [grayAnimation.finished] : [])
+  ]);
+
+  element.style.transform = finalTransform;
+  dropAnimation.cancel();
+
+  if (grayAnimation) {
+
+    // 회색 파일은 위로 이동한 위치에 계속 고정
+    objects["02"].style.translate = grayTarget;
+
+    grayAnimation.cancel();
+  }
+
+  busy = false;
+  /* 마지막 오브젝트 착지 완료 */
+if (current === order.length) {
+  lastDropFinishedAt = performance.now();
+}
+}
+
+
+
+/* ==========================================
+   스크롤 → 오브젝트 낙하 → 다음 페이지
+========================================== */
+
+const SCROLL_RESET = 220;
+let gestureLocked = false;
+let resetTimer = null;
+let hasStartedScrolling = false;
+
+window.addEventListener(
+  "wheel",
+  async (e) => {
+
+    e.preventDefault();
+
+    clearTimeout(resetTimer);
+
+    resetTimer =
+      setTimeout(() => {
+
+        gestureLocked = false;
+
+      }, SCROLL_RESET);
+
+
+    if (gestureLocked) return;
+
+    if (e.deltaY <= 8) return;
+
+    hasStartedScrolling = true;
+
+    if (
+      busy ||
+      !ready ||
+      blinkBusy
+    ) {
+      return;
+    }
+
+
+    gestureLocked = true;
+
+
+    /* =====================================
+       첫 번째 스크롤
+       한 장 → blink → 32-1.5
+       ===================================== */
+
+    if (introStage === 0) {
+
+      await blinkChange(() => {
+
+        intro15.style.display =
+          "block";
+
+        introStage = 1;
+
+      });
+
+      return;
+    }
+
+
+    /* =====================================
+       두 번째 스크롤
+       32-1.5 → blink → 원래 한 장
+       ===================================== */
+
+    if (introStage === 1) {
+
+      await blinkChange(() => {
+
+        intro15.style.display =
+          "none";
+
+        introStage = 2;
+
+      });
+
+      return;
+    }
+
+
+    /* =====================================
+       여기부터 원래 쌓이기 시작
+       ===================================== */
+
+    if (current >= order.length) {
+
+      requestNextPage();
+
+      return;
+    }
+
+
+    dropNext();
+
+  },
+
+  {
+    passive: false
+  }
+);
+
+
+
+window.addEventListener("keydown", (e) => {
+
+  if (e.key !== "ArrowDown" && e.key !== " ") {
+    return;
+  }
+
+  e.preventDefault();
+
+  hasStartedScrolling = true;
+  if (busy || !ready || blinkBusy) return;
+
+  if (current >= order.length) {
+    requestNextPage();
+  } else {
+    dropNext();
+  }
+
+});
+
+
+// ==========================================
+// 이미지 로딩 후 시작
+// ==========================================
+
+async function prepare() {
+
+  await Promise.all(
+    Object.values(objects).map(img =>
+      img.decode().catch(() => {})
+    )
+  );
+
+  if (document.documentElement.classList.contains("sequence-blink-entry")) {
+    blinkBusy = true;
+    blink.style.visibility = "visible";
+    drawEye(1);
+    document.documentElement.classList.remove("sequence-blink-entry");
+    await eyeTween(1, 0, BLINK_OPEN_MS);
+    blink.style.visibility = "hidden";
+    blink.style.backgroundColor = "transparent";
+    blinkBusy = false;
+  }
+
+  ready = true;
+}
+
+prepare();
+
+
+window.installProjectScrollHint(() => ready && !busy && !blinkBusy && !hasStartedScrolling);
+</script>
+</body>
+</html>

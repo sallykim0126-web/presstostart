@@ -1,0 +1,2488 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>07. LUCK</title>
+  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #f3f3f3;
+      color: #333;
+    }
+
+    /* =====================================
+       SVG 배경
+       ===================================== */
+
+    
+#luck-page {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+
+  background-color: #f3f3f3;
+  background-image: url("../assets/15-14.svg");
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+}
+
+
+    #luck-page canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: grab;
+      touch-action: none;
+    }
+
+    #luck-page canvas.dragging {
+      cursor: grabbing;
+    }
+
+    /* =====================================
+       안내 문구
+       ===================================== */
+
+    #page-number {
+      position: absolute;
+      top: 26px;
+      left: 28px;
+      font-size: 12px;
+      letter-spacing: 0.18em;
+      color: #6f7984;
+      pointer-events: none;
+    }
+
+    #instruction {
+      position: absolute;
+      left: 50%;
+      top: 20%;
+      z-index: 2;
+      transform: translate(-50%, -50%);
+      font-family: "VT323", monospace;
+      font-size: clamp(24px, 4vw, 50px);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      color: #0000ff;
+      white-space: nowrap;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+
+    #instruction.hidden {
+      opacity: 0;
+    }
+
+    #status {
+      position: absolute;
+      bottom: 25px;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      color: #7d8790;
+      pointer-events: none;
+    }
+
+    /* =====================================
+       주사위 결과
+       ===================================== */
+
+    #result {
+      position: absolute;
+      top: 18%;
+      left: 50%;
+      transform: translateX(-50%);
+      opacity: 0;
+      transition: opacity 0.5s;
+      text-align: center;
+      font-size: 22px;
+      font-weight: 500;
+      color: #333;
+      pointer-events: none;
+    }
+
+    #result.visible {
+      opacity: 1;
+    }
+
+    #reset {
+      display: none;
+      position: absolute;
+      top: 20px;
+      right: 25px;
+      padding: 10px 15px;
+      background: rgba(255,255,255,0.8);
+      border: 1px solid #bac0c7;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 12px;
+      color: #424a52;
+    }
+
+    #reset.visible {
+      display: block;
+    }
+
+    #loading {
+      position: absolute;
+      left: 50%;
+      top: 52%;
+      transform: translate(-50%, -50%);
+      font-size: 12px;
+      color: #67727e;
+      pointer-events: none;
+    }
+
+    /* 주사위 숫자 결과 표시 숨기기 */
+#result {
+  display: none !important;
+}
+
+/* 다시 던지기 버튼 숨기기 */
+#reset {
+  display: none !important;
+}
+
+
+/* =========================================
+   WANNA TRY AGAIN 화면 빈틈 제거
+   브라우저 크기가 달라도 화면 전체 채우기
+========================================= */
+
+#luck-choice-overlay {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #f3f3f3 url("../assets/15-14.svg")
+              center / cover no-repeat;
+}
+
+
+
+/* SVG 이미지가 영역을 빈틈 없이 채우도록 */
+#luck-choice-overlay .luck-svg-stage > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+}
+
+  </style>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.167.1/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.167.1/examples/jsm/",
+      "cannon-es": "https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cannon-es.js"
+    }
+  }
+  </script>
+<script src="../assets/project-sounds.js"></script>
+<script src="../assets/project-scroll-hint.js"></script>
+</head>
+
+<body>
+
+  <main id="luck-page">
+
+    
+
+    <div id="instruction" class="hidden" data-click-sound="none">roll the dice</div>
+
+    <div id="result"></div>
+
+    <div id="status" style="display: none !important;"></div>
+    </div>
+
+    <button id="reset">↺ THROW AGAIN</button>
+
+    <div id="loading">LOADING DICE...</div>
+
+  </main>
+
+
+  <script type="module">
+
+    import * as THREE from 'three';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import * as CANNON from 'cannon-es';
+
+
+    // =====================================================
+    // ★ 원하는 방향으로 직접 조절할 값 ★
+    // =====================================================
+
+    const MODEL_PATH = '../assets/dice.glb';
+
+    // 착지했을 때 주사위 크기
+    const DICE_SIZE = 1.5;
+
+    // 처음 화면에서 주사위가 크게 보이는 정도
+    const START_SCALE = 2;
+
+    const THROW_FORWARD = 3.2;
+const THROW_UP = 6.0;
+const GRAVITY = -14;
+
+    // 카메라 높이
+    const CAMERA_HEIGHT = 11;
+const CAMERA_DEPTH = 10;
+
+const SHADOW_OPACITY = 0.36;
+
+
+    // =====================================================
+    // 1. 기본 요소
+    // =====================================================
+
+    const host = document.getElementById('luck-page');
+
+    const loading = document.getElementById('loading');
+    const instruction = document.getElementById('instruction');
+    const result = document.getElementById('result');
+    const status = document.getElementById('status');
+    const reset = document.getElementById('reset');
+
+
+    // =====================================================
+    // 2. THREE.JS 장면
+    // =====================================================
+
+    const scene = new THREE.Scene();
+
+scene.background = null;
+scene.fog = null;
+
+
+    // =====================================================
+    // 3. 카메라
+    // =====================================================
+
+    const camera = new THREE.PerspectiveCamera(
+      38,
+      1,
+      0.1,
+      100
+    );
+
+    // 위에서 아래를 내려다보는 시점
+    camera.position.set(
+      0,
+      CAMERA_HEIGHT,
+      CAMERA_DEPTH
+    );
+
+    camera.lookAt(0, 0, -0.8);
+
+
+    // =====================================================
+    // 4. 렌더러
+    // =====================================================
+
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: true
+    });
+
+    // SVG 배경이 보이도록 투명 처리
+    renderer.setClearColor(0x000000, 0);
+
+    renderer.setPixelRatio(
+      Math.min(window.devicePixelRatio, 1.5)
+    );
+
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+    // 주사위에 자연스러운 명암 적용
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 0.9;
+
+    host.insertBefore(
+      renderer.domElement,
+      host.firstChild
+    );
+
+
+    
+    // =====================================================
+    // 5. 조명 - 밝은 흰색 주사위 + 자연스러운 그림자
+    // =====================================================
+
+    // 메인 조명: 위쪽에서 내려오는 빛
+    const sunlight = new THREE.DirectionalLight(
+      0xffffff,
+      2.4
+    );
+
+    sunlight.position.set(-1.5, 16, 1.5);
+    sunlight.shadow.radius = 3;
+    sunlight.target.position.set(0, 0, -1.0);
+
+    sunlight.castShadow = true;
+
+    sunlight.shadow.mapSize.set(1024, 1024);
+
+    sunlight.shadow.camera.left = -11;
+    sunlight.shadow.camera.right = 11;
+    sunlight.shadow.camera.top = 11;
+    sunlight.shadow.camera.bottom = -11;
+
+    sunlight.shadow.camera.near = 0.5;
+    sunlight.shadow.camera.far = 36;
+
+    sunlight.shadow.bias = -0.0003;
+    sunlight.shadow.normalBias = 0.025;
+
+    scene.add(sunlight);
+    scene.add(sunlight.target);
+
+    // 전체적인 밝기: 어두운 면도 흰색으로 유지
+    const ambientLight = new THREE.AmbientLight(
+      0xffffff,
+      1.5
+    );
+
+    scene.add(ambientLight);
+
+    // 보조 조명: 어두운 옆면을 부드럽게 밝히기
+    const fillLight = new THREE.DirectionalLight(
+      0xffffff,
+      1.0
+    );
+
+    fillLight.position.set(5, 7, -3);
+    fillLight.castShadow = false;
+
+    scene.add(fillLight);
+
+
+
+    // =====================================================
+    // 6. 투명한 바닥 + 그림자
+    // =====================================================
+
+    // 바닥 자체는 보이지 않고 그림자만 나타남
+    const floor = new THREE.Mesh(
+      new THREE.PlaneGeometry(200, 200),
+
+      new THREE.ShadowMaterial({
+        color: 0x333840,
+        opacity: SHADOW_OPACITY
+      })
+    );
+
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.y = -0.015;
+
+    floor.receiveShadow = true;
+
+    scene.add(floor);
+
+
+    // =====================================================
+    // 7. 물리 엔진
+    // =====================================================
+
+    const world = new CANNON.World({
+      gravity: new CANNON.Vec3(
+        0,
+        GRAVITY,
+        0
+      ),
+      allowSleep: true
+    });
+
+    world.solver.iterations = 18;
+
+    const diceMat = new CANNON.Material('dice');
+    const groundMat = new CANNON.Material('ground');
+
+    // 주사위와 바닥 충돌
+    world.addContactMaterial(
+      new CANNON.ContactMaterial(
+        diceMat,
+        groundMat,
+        {
+          friction: 0.30,
+restitution: 0.28
+        }
+      )
+    );
+
+    // 주사위끼리 충돌
+    world.addContactMaterial(
+      new CANNON.ContactMaterial(
+        diceMat,
+        diceMat,
+        {
+          friction: 0.4,
+          restitution: 0.16
+        }
+      )
+    );
+
+    const ground = new CANNON.Body({
+      mass: 0,
+      material: groundMat,
+      shape: new CANNON.Plane()
+    });
+
+    ground.quaternion.setFromEuler(
+      -Math.PI / 2,
+      0,
+      0
+    );
+
+    world.addBody(ground);
+
+
+// =======================================
+// 주사위가 너무 멀리 굴러가지 않도록
+// 보이지 않는 벽 만들기
+// =======================================
+
+function createInvisibleWall(x, z, rotationY) {
+
+  const wall = new CANNON.Body({
+    mass: 0,
+    shape: new CANNON.Plane()
+  });
+
+  wall.position.set(x, 0, z);
+
+  wall.quaternion.setFromEuler(
+    0,
+    rotationY,
+    0
+  );
+
+  world.addBody(wall);
+}
+
+// 뒤쪽 경계
+createInvisibleWall(0, -3.4, 0);
+
+// 왼쪽 경계
+createInvisibleWall(-5.2, 0, Math.PI / 2);
+
+// 오른쪽 경계
+createInvisibleWall(5.2, 0, -Math.PI / 2);
+
+// 앞쪽 경계
+createInvisibleWall(0, 4.2, Math.PI);
+
+
+
+    // =====================================================
+    // 8. 처음 주사위 위치
+    // =====================================================
+
+    // 카메라와 가까운 아래쪽에 배치
+    
+const starts = [
+  new THREE.Vector3(-2.2, 1.55, 1.65),
+  new THREE.Vector3( 2.2, 1.55, 1.65)
+];
+
+
+    const rotations = [
+  // 왼쪽: 기존처럼 3이 보이는 방향 유지
+  new THREE.Euler(
+    0.32,
+    -0.4,
+    0.36
+  ),
+
+  // 오른쪽: 주사위를 옆으로 90도 회전
+  new THREE.Euler(
+    -0.22,
+    0.35,
+    Math.PI / 2
+  )
+];
+
+    const dice = [];
+
+    let state = 'loading';
+
+    let dragStartY = null;
+    let dragStartTime = 0;
+
+    let throwStart = 0;
+    let stillSince = null;
+    let rollFinished = false;
+
+
+    // =====================================================
+    // 9. GLB 주사위 생성
+    // =====================================================
+
+    function createDie(template, i) {
+
+      const model = template.clone(true);
+
+      // GLB 원본의 크기와 위치 정렬
+      const bounds = new THREE.Box3()
+        .setFromObject(model);
+
+      const center = bounds.getCenter(
+        new THREE.Vector3()
+      );
+
+      const size = bounds.getSize(
+        new THREE.Vector3()
+      );
+
+      const s = DICE_SIZE / Math.max(
+        size.x,
+        size.y,
+        size.z
+      );
+
+      model.scale.setScalar(s);
+
+      model.position.copy(center)
+        .multiplyScalar(-s);
+
+      // GLB의 기존 흰색/검정 재질 유지
+      
+model.traverse(obj => {
+
+  if (!obj.isMesh) return;
+
+  obj.castShadow = true;
+  obj.receiveShadow = false;
+  obj.frustumCulled = false;
+
+  function changeMaterial(mat) {
+
+    const name = (mat.name || "").toLowerCase();
+
+    // 흰색 몸체인지 확인
+    const isWhite =
+      name.includes("white") ||
+      name.includes("body") ||
+      (
+        mat.color &&
+        mat.color.r > 0.65 &&
+        mat.color.g > 0.65 &&
+        mat.color.b > 0.65
+      );
+
+    if (isWhite) {
+
+      // 흰색 몸체에만 조명에 반응하는 재질 적용
+      return new THREE.MeshStandardMaterial({
+        color: 0xf5f5f3,
+        roughness: 0.72,
+        metalness: 0,
+        flatShading: false
+      });
+
+    }
+
+    // 검정 눈금은 원본 재질 유지
+    return mat;
+  }
+
+  if (Array.isArray(obj.material)) {
+
+    obj.material = obj.material.map(changeMaterial);
+
+  } else {
+
+    obj.material = changeMaterial(obj.material);
+
+  }
+
+});
+
+
+      const root = new THREE.Group();
+
+      const faces = new THREE.Group();
+      faces.add(model);
+      root.add(faces);
+      randomizeDieFaces(faces);
+
+      root.position.copy(starts[i]);
+      root.rotation.copy(rotations[i]);
+
+      root.scale.setScalar(START_SCALE);
+
+      scene.add(root);
+
+      return {
+        root,
+        faces,
+        body: null
+      };
+
+    }
+
+
+    // =====================================================
+    // 10. GLB 불러오기
+    // =====================================================
+
+    const loader = new GLTFLoader();
+
+    loader.load(
+
+      MODEL_PATH,
+
+      gltf => {
+
+        dice.push(
+          createDie(gltf.scene, 0),
+          createDie(gltf.scene, 1)
+        );
+
+        state = 'ready';
+        instruction.classList.remove('hidden');
+
+        loading.style.display = 'none';
+
+      },
+
+      undefined,
+
+      error => {
+
+        console.error(error);
+
+        loading.textContent =
+          'GLB 파일 경로 확인: ' + MODEL_PATH;
+
+      }
+
+    );
+
+
+    // =====================================================
+    // 11. 드래그하는 동안 움직임
+    // =====================================================
+
+    function dragPose(t) {
+
+      dice.forEach((d, i) => {
+
+        const side = i === 0 ? -1 : 1;
+
+        d.root.position.copy(starts[i]);
+
+        // 살짝 들어 올리기
+        d.root.position.y += 0.5 * t;
+
+        // 앞쪽으로 이동
+        d.root.position.z -= 0.5 * t;
+
+        d.root.position.x += side * 0.09 * t;
+
+        // 조금씩 회전
+        d.root.rotation.set(
+
+          rotations[i].x + 0.4 * t,
+
+          rotations[i].y + side * 0.45 * t,
+
+          rotations[i].z + side * 0.15 * t
+
+        );
+
+      });
+
+    }
+
+
+    // =====================================================
+    // 12. 실제로 주사위 던지기
+    // =====================================================
+
+    function throwDice(power) {
+      let landingSoundPlayed = false;
+
+      state = 'rolling';
+      window.dispatchEvent(
+  new Event("luck-dice-start")
+);
+
+      throwStart = performance.now();
+
+      stillSince = null;
+      rollFinished = false;
+
+      instruction.classList.add('hidden');
+
+      result.classList.remove('visible');
+
+      status.textContent = 'ROLLING...';
+
+
+      dice.forEach((d, i) => {
+
+        const side = i === 0 ? -1 : 1;
+
+        const half = DICE_SIZE / 2;
+
+        const body = new CANNON.Body({
+
+          mass: 1,
+
+          material: diceMat,
+
+          shape: new CANNON.Box(
+            new CANNON.Vec3(
+              half,
+              half,
+              half
+            )
+          ),
+
+          linearDamping: 0.12,
+angularDamping: 0.28,
+
+          allowSleep: true,
+          sleepSpeedLimit: 0.13,
+          sleepTimeLimit: 0.8
+
+        });
+
+
+        // 현재 주사위 위치에서 시작
+        body.position.set(
+
+          d.root.position.x,
+
+          d.root.position.y + 0.3,
+
+          d.root.position.z
+
+        );
+
+        body.quaternion.set(
+          d.root.quaternion.x,
+          d.root.quaternion.y,
+          d.root.quaternion.z,
+          d.root.quaternion.w
+        );
+
+
+        // 앞쪽으로 날아가는 속도
+        const random = (min, max) =>
+  min + Math.random() * (max - min);
+
+const randomSign = () =>
+  Math.random() < 0.5 ? -1 : 1;
+
+// 주사위마다 조금씩 다른 방향으로 날아감
+body.velocity.set(
+  side * random(0.25, 0.55),
+
+  // 위로 강하게 던지기
+  THROW_UP + power * 1.5 + random(-0.3, 0.3),
+
+  // 앞쪽으로는 조금 천천히 이동
+  -(THROW_FORWARD + power * 0.4 + random(-0.3, 0.3))
+);
+
+// 주사위 회전 속도 — 자연스럽게 조절
+body.angularVelocity.set(
+  randomSign() * random(3.5, 6),
+  randomSign() * random(3, 5),
+  randomSign() * random(3.5, 6)
+);
+
+
+        body.addEventListener('collide', event => {
+          if (landingSoundPlayed || state !== 'rolling' || event.body !== ground || body.velocity.y >= 0) return;
+          landingSoundPlayed = true;
+          window.projectSounds?.play('dice');
+        });
+        world.addBody(body);
+
+        d.body = body;
+
+      });
+
+    }
+
+
+    // =====================================================
+    // 13. 실제 위쪽 눈금 계산
+    // =====================================================
+
+    // 현재 사용 중인 GLB의 면 방향
+    // +Z=1, -Z=6
+    // +X=2, -X=5
+    // +Y=3, -Y=4
+
+    const pipFaces = [
+
+      [new THREE.Vector3(0, 0, 1), 1],
+
+      [new THREE.Vector3(0, 0, -1), 6],
+
+      [new THREE.Vector3(1, 0, 0), 2],
+
+      [new THREE.Vector3(-1, 0, 0), 5],
+
+      [new THREE.Vector3(0, 1, 0), 3],
+
+      [new THREE.Vector3(0, -1, 0), 4]
+
+    ];
+
+
+    function randomizeDieFaces(faces) {
+      // Pick one of the cube's 24 orientations before the die is shown.
+      // The roll's physics stays independent of which number is on each side.
+      const [normal] = pipFaces[Math.floor(Math.random() * pipFaces.length)];
+      const quarterTurns = Math.floor(Math.random() * 4);
+      faces.quaternion
+        .setFromUnitVectors(normal, groundUp)
+        .premultiply(new THREE.Quaternion().setFromAxisAngle(groundUp, quarterTurns * Math.PI / 2));
+    }
+
+    function visibleTopNumber(d) {
+
+      const q = d.root.quaternion.clone().multiply(d.faces.quaternion);
+
+      // 실제 바닥 기준 위쪽 방향
+      const up = new THREE.Vector3(0, 1, 0);
+
+      let highest = -Infinity;
+      let value = 1;
+
+      for (const [normal, number] of pipFaces) {
+
+        const score = normal.clone()
+          .applyQuaternion(q)
+          .dot(up);
+
+        if (score > highest) {
+
+          highest = score;
+          value = number;
+
+        }
+
+      }
+
+      return value;
+
+    }
+
+
+    // =====================================================
+    // 14. 주사위가 멈췄을 때 결과 표시
+    // =====================================================
+
+    function finishRolling() {
+
+      if (rollFinished) return;
+
+      rollFinished = true;
+
+      state = 'finished';
+
+      const a = visibleTopNumber(dice[0]);
+      const b = visibleTopNumber(dice[1]);
+
+      const total = a + b;
+      window.dispatchEvent(
+  new CustomEvent("luck-dice-result", {
+    detail: { total }
+  })
+);
+
+      // 보이는 윗면 숫자로 실제 결과 결정
+      result.textContent =
+        `${a} + ${b} = ${total}`;
+
+      result.classList.add('visible');
+
+      reset.classList.add('visible');
+
+      status.textContent = '';
+
+    }
+
+
+    // =====================================================
+    // 15. 마우스 드래그
+    // =====================================================
+
+    const canvas = renderer.domElement;
+    canvas.dataset.clickSound = 'none';
+
+
+    canvas.addEventListener('pointerdown', e => {
+
+      if (state !== 'ready') return;
+
+      if (
+        e.pointerType === 'mouse' &&
+        e.button !== 0
+      ) {
+        return;
+      }
+
+      dragStartY = e.clientY;
+
+      dragStartTime = performance.now();
+
+      state = 'dragging';
+
+      canvas.setPointerCapture(e.pointerId);
+
+      canvas.classList.add('dragging');
+
+    });
+
+
+    canvas.addEventListener('pointermove', e => {
+
+      if (state !== 'dragging') return;
+
+      const dy = Math.max(
+        0,
+        dragStartY - e.clientY
+      );
+
+      dragPose(
+        Math.min(dy / 240, 1)
+      );
+
+    });
+
+
+    canvas.addEventListener('pointerup', e => {
+
+      if (state !== 'dragging') return;
+
+      canvas.classList.remove('dragging');
+
+      const dy = Math.max(
+        0,
+        dragStartY - e.clientY
+      );
+
+      const dt = Math.max(
+
+        0.08,
+
+        (performance.now() - dragStartTime) / 1000
+
+      );
+
+
+      // 드래그가 너무 짧으면 취소
+      if (dy < 30) {
+
+        state = 'ready';
+
+        dragPose(0);
+
+        return;
+
+      }
+
+
+      // 드래그 거리와 속도를 던지는 힘으로 변환
+      const power = THREE.MathUtils.clamp(
+
+        dy / 280 + (dy / dt) / 1600,
+
+        0.25,
+
+        1.0
+
+      );
+
+      throwDice(power);
+
+    });
+
+
+    canvas.addEventListener('pointercancel', () => {
+
+      if (state === 'dragging') {
+
+        state = 'ready';
+
+        dragPose(0);
+
+      }
+
+      canvas.classList.remove('dragging');
+
+    });
+
+
+    // =====================================================
+    // 16. 다시 던지기
+    // =====================================================
+
+    function resetDice() {
+
+      dice.forEach((d, i) => {
+
+        if (d.body) {
+
+          world.removeBody(d.body);
+
+          d.body = null;
+
+        }
+
+        d.root.position.copy(starts[i]);
+
+        d.root.rotation.copy(rotations[i]);
+        randomizeDieFaces(d.faces);
+
+        d.root.scale.setScalar(START_SCALE);
+
+      });
+
+      result.classList.remove('visible');
+
+      reset.classList.remove('visible');
+
+      instruction.classList.remove('hidden');
+
+      status.textContent = 'DRAG THE DICE UPWARD';
+
+      state = 'ready';
+
+      stillSince = null;
+      rollFinished = false;
+
+    }
+
+
+// 다른 스크립트에서도 주사위를 다시 시작할 수 있게
+window.resetLuckDice = function () {
+
+  resetDice();
+
+  // 재도전 시에는 안내 문구를 숨김
+  instruction.style.display = "none";
+  status.style.display = "none";
+
+};
+
+
+    reset.addEventListener('click', resetDice);
+
+
+    // =====================================================
+    // 17. 화면 크기 대응
+    // =====================================================
+
+    function resize() {
+
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+
+      camera.aspect = w / h;
+
+      camera.updateProjectionMatrix();
+
+      renderer.setSize(w, h);
+
+    }
+
+    window.addEventListener('resize', resize);
+
+    resize();
+
+
+    // =====================================================
+    // 18. 애니메이션
+    // =====================================================
+
+    const clock = new THREE.Clock();
+    const groundUp = new THREE.Vector3(0, 1, 0);
+
+    function getGroundContactHeight(body) {
+      const half = DICE_SIZE / 2;
+      return half * pipFaces.reduce((sum, [normal]) => {
+        const axis = normal.clone().applyQuaternion(body.quaternion);
+        return sum + Math.abs(axis.y);
+      }, 0) / 2;
+    }
+
+    function settleTiltedDie(body, dt) {
+      if (body.velocity.length() >= 0.17 || body.angularVelocity.length() >= 0.25) return;
+      if (body.position.y > getGroundContactHeight(body) + 0.08) return;
+
+      const rotation = new THREE.Quaternion().copy(body.quaternion);
+      const faceUp = new THREE.Vector3();
+      for (const [normal] of pipFaces) {
+        const direction = normal.clone().applyQuaternion(rotation);
+        if (direction.y > faceUp.y) faceUp.copy(direction);
+      }
+
+      if (faceUp.y > 0.99999) return;
+
+      // Flatten the face already pointing up without changing the visible result.
+      const correction = new THREE.Quaternion().setFromUnitVectors(faceUp, groundUp);
+      rotation.rotateTowards(correction.multiply(rotation), 2.5 * dt);
+      body.quaternion.copy(rotation);
+      body.position.y = getGroundContactHeight(body);
+      body.velocity.setZero();
+      body.angularVelocity.setZero();
+      body.aabbNeedsUpdate = true;
+    }
+
+    function animate() {
+
+      requestAnimationFrame(animate);
+
+      const dt = Math.min(
+        clock.getDelta(),
+        0.05
+      );
+
+
+      if (
+        state === 'rolling' ||
+        state === 'finished'
+      ) {
+
+        world.step(1 / 60, dt, 5);
+
+        const elapsed =
+          (performance.now() - throwStart) / 1000;
+
+
+        dice.forEach(d => {
+
+          if (!d.body) return;
+
+          if (state === 'rolling' && elapsed > 1) {
+            settleTiltedDie(d.body, dt);
+          }
+
+          // 물리 위치 반영
+          d.root.position.set(
+
+            d.body.position.x,
+
+            d.body.position.y,
+
+            d.body.position.z
+
+          );
+
+          // 물리 회전 반영
+          d.root.quaternion.set(
+
+            d.body.quaternion.x,
+
+            d.body.quaternion.y,
+
+            d.body.quaternion.z,
+
+            d.body.quaternion.w
+
+          );
+
+
+          // 멀어지는 동안 크게 보이던 주사위가
+          // 실제 크기로 줄어듦
+          const t = Math.min(
+  elapsed / 0.18,
+  1
+);
+
+          d.root.scale.setScalar(
+            THREE.MathUtils.lerp(
+              START_SCALE,
+              1,
+              t
+            )
+          );
+
+        });
+
+
+        // 두 주사위가 멈췄는지 확인
+        if (state === 'rolling') {
+
+         
+// 현재 회전 상태에서 주사위가 바닥에 닿는 높이 계산
+const stopped = dice.every(d => {
+
+  if (!d.body) return false;
+
+  const body = d.body;
+
+  const contactHeight = getGroundContactHeight(body);
+
+  // 바닥에 충분히 가까운지 확인
+  const onGround =
+    body.position.y <= contactHeight + 0.08;
+
+  // 이동과 회전이 거의 멈췄는지 확인
+  const slowEnough =
+    body.velocity.length() < 0.17 &&
+    body.angularVelocity.length() < 0.25;
+
+  return onGround && contactHeight <= DICE_SIZE / 2 + 0.015 && (
+    body.sleepState === CANNON.Body.SLEEPING ||
+    slowEnough
+  );
+
+});
+
+
+
+          if (stopped && elapsed > 1) {
+
+            if (stillSince === null) {
+              stillSince = performance.now();
+            }
+
+            if (
+              performance.now() - stillSince > 650
+            ) {
+
+              finishRolling();
+
+            }
+
+          } else {
+
+            stillSince = null;
+
+          }
+
+
+          // 너무 오래 구르면 정지
+          
+// 너무 오래 굴러가면 움직임을 서서히 줄이기
+// 공중에서 강제로 정지시키지 않음
+if (elapsed > 9) {
+
+  dice.forEach(d => {
+
+    if (!d.body) return;
+
+    d.body.linearDamping = 0.85;
+    d.body.angularDamping = 0.9;
+
+    // 물리 엔진과 중력은 계속 작동
+  });
+
+}
+
+
+              
+
+        }
+
+      }
+
+
+      renderer.render(scene, camera);
+
+    }
+
+
+    // =====================================================
+    // 19. 실행
+    // =====================================================
+
+    animate();
+
+  </script>
+
+<!-- ============================================
+     LUCK — NOTIFICATION / EMAIL / RETRY UI
+     기존 주사위 코드 아래에 추가
+============================================ -->
+
+<style>
+  /* 기존 결과와 다시 던지기 버튼 제거 */
+  #result,
+  #reset {
+    display: none !important;
+  }
+
+  /* 12, 13: 우측 상단 작은 알림 아이콘 */
+  #luck-bell {
+  position: fixed;
+  top: 18px;
+  right: 20px;
+  z-index: 50;
+
+  width: 48px;
+  height: 48px;
+  padding: 0;
+
+  border: 0;
+  background: transparent;
+  overflow: visible;
+  cursor: pointer;
+}
+
+  /*
+    원본 SVG는 1920x1080이고
+    벨 그림은 중앙에 작게 들어 있음.
+    이미지를 크게 확대하고 가운데만 잘라 보여줌.
+  */
+ #luck-bell img {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+
+  /* 1920×1080 화면을 기준으로 유동적으로 확대/축소 */
+width: min(18vw, 32vh);
+
+  max-width: none;
+  height: auto;
+
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+  /* 메일 / 선택 화면 공통 */
+  #luck-mail-overlay,
+  
+#luck-choice-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  /* 기존 종이 질감 SVG 배경 유지 */
+  background-color: #f3f3f3;
+  background-image: url("../assets/15-14.svg");
+  background-size: 100% 100%;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+
+  #luck-mail-overlay {
+    background: rgba(0, 0, 0, 0.62);
+  }
+
+  #luck-choice-overlay {
+  z-index: 110;
+
+  background-color: #f3f3f3;
+  background-image: url("../assets/15-14.svg");
+  background-size: 100% 100%;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+  #luck-mail-overlay[hidden],
+  #luck-choice-overlay[hidden],
+  #luck-mail-image[hidden],
+  #luck-missing-mail[hidden] {
+    display: none !important;
+  }
+
+  /*
+    모든 SVG가 1920x1080이므로
+    화면 비율을 유지해서 표시
+  */
+  .luck-svg-stage {
+    position: relative;
+    width: min(100vw, 177.777vh);
+    aspect-ratio: 16 / 9;
+    flex: none;
+  }
+
+  .luck-svg-stage > img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  /* SVG 속 X 위에 배치한 투명 버튼 */
+  
+#luck-mail-overlay .luck-svg-stage {
+  position: relative;
+  width: min(80vw, 160vh);
+  aspect-ratio: 16 / 9;
+  flex: none;
+
+  transform: translate(35px, -10px);
+}
+
+#luck-mail-overlay .luck-svg-stage > img {
+  position: absolute;
+  inset: 0;
+
+  display: block;
+  width: 100%;
+  height: 100%;
+
+  object-fit: fill;
+  pointer-events: none;
+}
+
+/* 메일 X 버튼 클릭 영역 */
+
+
+
+#luck-mail-close {
+  position: absolute;
+
+  left: 74.8%;
+  top: 0; /* 실제 위치는 JavaScript에서 자동 설정 */
+
+  width: 3.8%;
+  height: 6.4%;
+
+  z-index: 9999;
+
+  padding: 0;
+  margin: 0;
+  border: none;
+
+  background: transparent;
+  pointer-events: auto !important;
+  cursor: pointer;
+}
+
+
+
+
+
+
+
+  /* 12번 메일 SVG가 없는 경우 */
+  #luck-missing-mail {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+
+    width: min(440px, 80%);
+    padding: 24px;
+
+    background: #e7e7e9;
+    border: 2px solid #222;
+    color: #111;
+    font-family: monospace;
+    text-align: center;
+  }
+
+  #luck-missing-mail button {
+    position: absolute;
+    right: 8px;
+    top: 6px;
+
+    border: 0;
+    background: transparent;
+    font-size: 26px;
+    cursor: pointer;
+  }
+
+  /* 15의 YES 위치 */
+  #luck-yes {
+    position: absolute;
+
+    left: 9.4%;
+    top: 60.6%;
+    width: 30.7%;
+    height: 15.2%;
+
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  /* 15의 NO 위치 */
+  #luck-no {
+    position: absolute;
+
+    left: 60%;
+    top: 60.6%;
+    width: 30.7%;
+    height: 15.2%;
+
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  #luck-yes:disabled,
+  #luck-no:disabled {
+    cursor: default;
+  }
+
+
+#luck-yes,
+#luck-no {
+  transition: background 0.08s ease;
+}
+
+#luck-yes:active,
+#luck-no:active,
+#luck-yes.pressed,
+#luck-no.pressed {
+  background: rgba(0, 0, 0, 0.22);
+}
+
+/* =========================================
+   WANNA TRY AGAIN — 반응형 전체 화면
+========================================= */
+
+#luck-choice-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  z-index: 110;
+
+  background: #f3f3f3 url("../assets/15-14.svg")
+              center / cover no-repeat;
+}
+
+/* 질문과 버튼을 같은 비율로 줄이고 화면 중앙에 배치 */
+#luck-choice-overlay .luck-svg-stage {
+  position: absolute;
+
+  left: 50%;
+  top: 50%;
+
+  width: min(65vw, 115.5556vh);
+
+  aspect-ratio: 16 / 9;
+  transform: translate(-50%, -50%);
+
+  flex: none;
+}
+
+/* SVG 이미지도 동일한 영역에 맞춤 */
+#luck-choice-overlay .luck-svg-stage > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+}
+
+/* 화면이 닫혔을 때 숨김 유지 */
+#luck-choice-overlay[hidden] {
+  display: none !important;
+}
+
+
+/* =========================================
+   NO → 눈 깜박임 → 18번 화면
+========================================= */
+
+/* 마지막 18번 화면 */
+#luck-ending-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #000;
+  overflow: hidden;
+}
+
+#luck-ending-screen[hidden] {
+  display: none !important;
+}
+
+#luck-ending-screen img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+/* 눈꺼풀 효과 */
+#luck-eye-blink {
+  position: fixed;
+  inset: 0;
+  z-index: 210;
+
+  overflow: hidden;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+#luck-eye-blink.playing {
+  visibility: visible;
+}
+
+
+/* =========================================
+   기존 03 페이지와 동일한 눈 깜박임
+========================================= */
+
+#luck-eye-blink {
+  position: fixed;
+  inset: -2px;
+  width: calc(100% + 4px);
+  height: calc(100% + 4px);
+  z-index: 9999;
+
+  pointer-events: none;
+  visibility: hidden;
+  background: transparent;
+}
+
+#luck-eye-blink svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* 18번 엔딩 화면 */
+#luck-ending-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: #000;
+  overflow: hidden;
+}
+
+#luck-ending-screen[hidden] {
+  display: none !important;
+}
+
+#luck-ending-screen img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+
+
+
+
+
+
+</style>
+
+
+<!-- 처음에는 14-12.svg가 보임 -->
+<button
+  id="luck-bell"
+  type="button"
+  aria-label="메일 알림"
+>
+  <img
+    id="luck-bell-image"
+    src="../assets/14-12.svg"
+    alt=""
+  >
+</button>
+
+
+<!-- 메일 팝업 -->
+<div id="luck-mail-overlay" hidden>
+
+  <div class="luck-svg-stage">
+
+    <img
+      id="luck-mail-image"
+      alt="주사위 결과 메일"
+      draggable="false"
+    >
+
+    <!-- SVG 안의 X를 클릭할 수 있게 만드는 버튼 -->
+    <button
+      id="luck-mail-close"
+      type="button"
+      aria-label="메일 닫기"
+    ></button>
+
+    <!-- 주사위 합 12용 임시 안내 -->
+    <div id="luck-missing-mail" hidden>
+      <button
+        id="luck-missing-close"
+        type="button"
+        aria-label="닫기"
+      >×</button>
+
+      <p>TOTAL: 12</p>
+      <p>12번 메일 SVG가 아직 없습니다.</p>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- 15, 16, 17 선택 화면 -->
+<div id="luck-choice-overlay" hidden>
+
+  <div class="luck-svg-stage">
+
+    <img
+      id="luck-choice-image"
+      src="../assets/16-15.svg"
+      alt="Wanna try again?"
+      draggable="false"
+    >
+
+    <!-- 원본 SVG의 YES 버튼 위 -->
+    <button
+      id="luck-yes"
+      type="button"
+      aria-label="Yes"
+    ></button>
+
+    <!-- 원본 SVG의 NO 버튼 위 -->
+    <button
+      id="luck-no"
+      type="button"
+      aria-label="No"
+    ></button>
+
+  </div>
+</div>
+
+<!-- 18번 화면 / 이후 22번으로 전환 -->
+<div id="luck-ending-screen" hidden>
+  <img
+    src="../assets/18.svg"
+    alt="Ending"
+    draggable="false"
+  >
+</div>
+
+
+<!-- 03_blink와 동일한 곡선형 눈 깜박임 -->
+<div id="luck-eye-blink" aria-hidden="true">
+
+  <svg
+    viewBox="0 0 1000 600"
+    preserveAspectRatio="none"
+  >
+
+    <defs>
+      <filter
+        id="luck-edge-blur"
+        x="-15%"
+        y="-30%"
+        width="130%"
+        height="160%"
+      >
+        <feGaussianBlur stdDeviation="17"/>
+      </filter>
+    </defs>
+
+    <rect
+      id="luck-top-cover"
+      x="-60"
+      y="-60"
+      width="1120"
+      height="60"
+      fill="black"
+    />
+
+    <rect
+      id="luck-bottom-cover"
+      x="-60"
+      y="600"
+      width="1120"
+      height="60"
+      fill="black"
+    />
+
+    <path
+      id="luck-lid-top"
+      fill="black"
+      filter="url(#luck-edge-blur)"
+    />
+
+    <path
+      id="luck-lid-bottom"
+      fill="black"
+      filter="url(#luck-edge-blur)"
+    />
+
+  </svg>
+
+</div>
+
+
+
+
+<script>
+(() => {
+
+  // ============================================
+  // 1. 파일 경로
+  // ============================================
+
+  const ASSET_PATH = "../assets/";
+
+  const BELL_NORMAL = ASSET_PATH + "14-12.svg";
+  const BELL_NEW = ASSET_PATH + "14-13.svg";
+
+  const CHOICE_START = ASSET_PATH + "16-15.svg";
+  const CHOICE_YES = ASSET_PATH + "16-16.svg";
+  const CHOICE_NO = ASSET_PATH + "16-17.svg";
+
+  // 주사위 착지 후 2초 뒤 알림
+  const NOTIFICATION_DELAY = 3100;
+
+
+  // ============================================
+  // 2. HTML 요소
+  // ============================================
+
+  const bell = document.getElementById("luck-bell");
+
+  const bellImage =
+    document.getElementById("luck-bell-image");
+
+    // 알림 효과음
+  const notificationSound = new Audio(
+    "../assets/dragon-studio-new-notification-3-398649.mp3"
+  );
+
+  notificationSound.preload = "auto";
+  notificationSound.volume = 0.7;
+
+  const mailOverlay =
+    document.getElementById("luck-mail-overlay");
+
+  const mailImage =
+    document.getElementById("luck-mail-image");
+
+  const mailClose =
+    document.getElementById("luck-mail-close");
+
+  const missingMail =
+    document.getElementById("luck-missing-mail");
+
+  const missingClose =
+    document.getElementById("luck-missing-close");
+
+  const choiceOverlay =
+    document.getElementById("luck-choice-overlay");
+
+  const choiceImage =
+    document.getElementById("luck-choice-image");
+
+  const yesButton =
+    document.getElementById("luck-yes");
+
+  const noButton =
+    document.getElementById("luck-no");
+
+
+  // ============================================
+  // 3. 상태
+  // ============================================
+
+  let diceTotal = null;
+  let notificationReady = false;
+  let notificationTimer = null;
+
+
+  
+ // 주사위를 던진 순간
+ window.addEventListener("luck-dice-start", () => {
+
+   diceTotal = null;
+   notificationReady = false;
+
+   // 일반 종 아이콘으로 초기화
+   bellImage.src = BELL_NORMAL;
+   bellImage.style.left = "50%";
+
+   mailOverlay.hidden = true;
+   choiceOverlay.hidden = true;
+
+   // 이전 알림 타이머 제거
+   if (notificationTimer !== null) {
+     clearTimeout(notificationTimer);
+     notificationTimer = null;
+   }
+
+   // 지정한 시간 뒤 숫자 1과 효과음 등장
+   notificationTimer = setTimeout(() => {
+
+     bellImage.src = BELL_NEW;
+
+     // 숫자 1이 포함된 종의 위치
+     bellImage.style.left = "calc(50% + 2px)";
+
+     notificationReady = true;
+
+     // 효과음 재생
+     notificationSound.currentTime = 0;
+
+     notificationSound.play().catch(error => {
+       console.warn("알림 소리 재생 실패:", error);
+     });
+
+   }, NOTIFICATION_DELAY);
+
+ });
+
+
+ // 주사위가 멈췄을 때 결과 저장
+ window.addEventListener("luck-dice-result", (event) => {
+   diceTotal = Number(event.detail.total);
+ });
+
+
+
+
+  
+/* ============================================
+   알림 클릭 → 주사위 합계 2~12에 맞는 메일
+   2 = 14-01.svg
+   12 = 14-11.svg
+============================================ */
+
+
+// SVG마다 실제 X 버튼의 세로 위치가 다름
+const MAIL_CLOSE_TOP = {
+  "01": "11.5%",
+  "02": "23.0%",
+  "03": "15.0%",
+  "04": "15.0%",
+  "05": "23.0%",
+  "06": "23.0%",
+  "07": "18.7%",
+  "08": "23.0%",
+  "09": "18.7%",
+  "10": "18.7%",
+  "11": "18.7%"
+};
+
+// 알림 클릭 → 결과에 맞는 메일 표시
+bell.addEventListener("click", () => {
+
+  if (!notificationReady || diceTotal === null) {
+    return;
+  }
+
+  if (diceTotal < 2 || diceTotal > 12) {
+    return;
+  }
+
+  // 주사위 합계 2~12 → 14-01.svg ~ 14-11.svg
+  const fileNumber = String(diceTotal - 1).padStart(2, "0");
+
+  mailImage.src =
+    ASSET_PATH + "14-" + fileNumber + ".svg";
+
+  // 해당 SVG의 X 위치 자동 적용
+  mailClose.style.top = MAIL_CLOSE_TOP[fileNumber];
+
+  mailImage.hidden = false;
+  missingMail.hidden = true;
+  mailClose.hidden = false;
+
+  mailOverlay.hidden = false;
+
+});
+
+
+
+
+
+
+// ============================================
+// 선택 SVG의 배경 조각 제거
+// 원본 SVG 파일은 수정하지 않음
+// ============================================
+
+const cleanSvgCache = new Map();
+
+async function showCleanChoiceSvg(path) {
+
+  try {
+
+    if (!cleanSvgCache.has(path)) {
+
+      const task = fetch(path)
+        .then(response => {
+
+          if (!response.ok) {
+            throw new Error("SVG 불러오기 실패");
+          }
+
+          return response.text();
+
+        })
+        .then(source => {
+
+          const doc = new DOMParser().parseFromString(
+            source,
+            "image/svg+xml"
+          );
+
+          // 네 조각으로 나뉜 배경 이미지 제거
+          doc.querySelectorAll("image").forEach(image => {
+            image.remove();
+          });
+
+          // 전체 화면을 덮는 배경 사각형 제거
+          doc.querySelectorAll("rect").forEach(rect => {
+
+            const width = Number(rect.getAttribute("width"));
+            const height = Number(rect.getAttribute("height"));
+
+            if (width > 1900 && height > 1000) {
+              rect.remove();
+            }
+
+          });
+
+          const svgText =
+            new XMLSerializer().serializeToString(
+              doc.documentElement
+            );
+
+          const blob = new Blob(
+            [svgText],
+            { type: "image/svg+xml;charset=utf-8" }
+          );
+
+          return URL.createObjectURL(blob);
+
+        });
+
+      cleanSvgCache.set(path, task);
+
+    }
+
+    choiceImage.src = await cleanSvgCache.get(path);
+
+  } catch (error) {
+
+    console.error(error);
+
+    // 오류가 발생해도 원본 SVG는 표시
+    choiceImage.src = path;
+
+  }
+
+}
+
+
+
+  // ============================================
+  // 6. 메일 X 클릭 → 15
+  // ============================================
+
+  function openChoiceScreen() {
+
+    mailOverlay.hidden = true;
+
+    choiceOverlay.hidden = false;
+
+    showCleanChoiceSvg(CHOICE_START);
+
+    // 다시 선택 가능하게 초기화
+    yesButton.disabled = false;
+    noButton.disabled = false;
+    yesButton.classList.remove("pressed");
+noButton.classList.remove("pressed");
+
+  }
+
+  mailClose.addEventListener(
+    "click",
+    openChoiceScreen
+  );
+
+  missingClose.addEventListener(
+    "click",
+    openChoiceScreen
+  );
+
+
+  
+// ============================================
+// YES → 눌림 효과 → 주사위 처음으로
+// ============================================
+
+yesButton.addEventListener("click", () => {
+
+  yesButton.disabled = true;
+  noButton.disabled = true;
+
+  // 클릭하자마자 버튼을 진하게
+  yesButton.classList.add("pressed");
+
+  // 선택된 SVG 표시
+  showCleanChoiceSvg(CHOICE_YES);
+
+  setTimeout(() => {
+
+    // 선택 화면 닫기
+    choiceOverlay.hidden = true;
+    mailOverlay.hidden = true;
+
+    // 알림 초기화
+    diceTotal = null;
+    notificationReady = false;
+
+    bellImage.src = BELL_NORMAL;
+
+    if (notificationTimer) {
+      clearTimeout(notificationTimer);
+      notificationTimer = null;
+    }
+
+    // 주사위 초기 상태로 돌아감
+    if (typeof window.resetLuckDice === "function") {
+      window.resetLuckDice();
+    }
+
+    // 다음 선택을 위한 버튼 상태 초기화
+    yesButton.classList.remove("pressed");
+    noButton.classList.remove("pressed");
+
+    yesButton.disabled = false;
+    noButton.disabled = false;
+
+  }, 550);
+
+});
+
+
+// ============================================
+// 기존 03_blink와 동일한 눈꺼풀 애니메이션
+// ============================================
+
+const luckBlink = document.getElementById("luck-eye-blink");
+
+const luckLidTop = document.getElementById("luck-lid-top");
+const luckLidBottom = document.getElementById("luck-lid-bottom");
+
+const luckTopCover = document.getElementById("luck-top-cover");
+const luckBottomCover = document.getElementById("luck-bottom-cover");
+
+const luckEnding = document.getElementById("luck-ending-screen");
+
+const CLOSE_MS = 850;
+const HOLD_MS = 200;
+const OPEN_MS = 950;
+
+const clampEye = n => Math.max(0, Math.min(1, n));
+
+const easeEye = t => {
+  t = clampEye(t);
+  return t * t * (3 - 2 * t);
+};
+
+// 눈꺼풀 곡선 모양
+function drawLuckEye(p) {
+
+  p = clampEye(p);
+
+  const edge = 300 * p;
+  const curve = 190 * Math.sin(Math.PI * p);
+  const bottom = 600 - edge;
+
+  const fade = Math.min(
+    1,
+    Math.max(0, p / 0.12)
+  );
+
+  luckLidTop.setAttribute(
+    "d",
+    `M-100 -100 H1100 V${edge} Q500 ${edge + curve} -100 ${edge} Z`
+  );
+
+  luckLidBottom.setAttribute(
+    "d",
+    `M-100 700 H1100 V${bottom} Q500 ${bottom - curve} -100 ${bottom} Z`
+  );
+
+  [
+    luckLidTop,
+    luckLidBottom,
+    luckTopCover,
+    luckBottomCover
+  ].forEach(el => {
+    el.style.opacity = fade;
+  });
+
+  luckTopCover.setAttribute(
+    "height",
+    String(60 + Math.max(0, edge - 60))
+  );
+
+  luckBottomCover.setAttribute(
+    "y",
+    String(Math.min(600, bottom + 60))
+  );
+
+  luckBottomCover.setAttribute(
+    "height",
+    String(660 - Math.min(600, bottom + 60))
+  );
+
+  // 눈이 완전히 감겼을 때 빈틈 방지
+  luckBlink.style.backgroundColor =
+    p >= 0.999 ? "#000" : "transparent";
+}
+
+
+// 눈꺼풀 움직임
+function tweenLuckEye(from, to, duration) {
+  if (from === 0 && to === 1) window.projectSounds?.play('blink');
+
+  return new Promise(resolve => {
+
+    const start = performance.now();
+
+    function tick(now) {
+
+      const t = Math.min(
+        1,
+        (now - start) / duration
+      );
+
+      drawLuckEye(
+        from + (to - from) * easeEye(t)
+      );
+
+      if (t < 1) {
+        requestAnimationFrame(tick);
+      } else {
+        resolve();
+      }
+
+    }
+
+    requestAnimationFrame(tick);
+
+  });
+
+}
+
+function pauseLuck(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+
+
+// ============================================
+// NO → 17번 → 곡선형 눈 깜박임 → 18번
+// ============================================
+
+let luckEndingStarted = false;
+
+// 18 → 22 화면 전환 설정
+let movedTo22 = false;
+let canMoveTo22At = Infinity;
+
+/* 22번 화면에서 08로 넘어가는 설정 */
+let movingTo08 = false;
+let canMoveTo08At = Infinity;
+
+// 22번 SVG 미리 불러오기
+const image22 = new Image();
+image22.src = "../assets/22.svg";
+
+noButton.addEventListener("click", async () => {
+
+  if (luckEndingStarted) return;
+  luckEndingStarted = true;
+
+  yesButton.disabled = true;
+  noButton.disabled = true;
+
+  // 17번: NO가 눌린 상태
+  noButton.classList.add("pressed");
+
+  await showCleanChoiceSvg(CHOICE_NO);
+
+  try {
+    await choiceImage.decode();
+  } catch (error) {
+    console.warn(error);
+  }
+
+  // 18번 이미지도 미리 로딩
+  const endingImage = luckEnding.querySelector("img");
+
+  try {
+    await endingImage.decode();
+  } catch (error) {
+    console.warn(error);
+  }
+
+  // NO 버튼을 누른 상태 잠시 보여주기
+  await pauseLuck(200);
+
+  // 눈 깜박임 시작
+  drawLuckEye(0);
+  luckBlink.style.visibility = "visible";
+
+  // 곡선형 눈꺼풀이 내려와 눈 감기
+  await tweenLuckEye(0, 1, CLOSE_MS);
+
+  // 완전히 감긴 순간 18번으로 화면 교체
+  luckEnding.hidden = false;
+  choiceOverlay.hidden = true;
+
+  // 눈 감고 잠시 유지
+  await pauseLuck(HOLD_MS);
+
+  // 눈 다시 뜨기
+  await tweenLuckEye(1, 0, OPEN_MS);
+
+  // 눈꺼풀 제거
+  luckBlink.style.visibility = "hidden";
+  luckBlink.style.backgroundColor = "transparent";
+
+  // 18번이 나타난 뒤 0.8초 후부터 다음 스크롤 허용
+canMoveTo22At = performance.now() + 800;
+
+});
+
+
+// ============================================
+// 18번 → 스크롤 → 눈 깜박임 → 22번
+// ============================================
+
+window.addEventListener("wheel", async (e) => {
+
+  // 아래로 스크롤할 때만 작동
+  if (e.deltaY <= 0) return;
+
+  // 18번 화면이 보일 때만 작동
+  if (luckEnding.hidden) return;
+
+  // 중복 실행 방지
+  if (movedTo22) return;
+
+  // 18번 화면이 충분히 보인 뒤 전환
+  if (performance.now() < canMoveTo22At) return;
+
+  movedTo22 = true;
+
+  // 22번 이미지 로딩 확인
+  try {
+    await image22.decode();
+  } catch (error) {
+    console.error("22.svg 로딩 실패:", error);
+    movedTo22 = false;
+    return;
+  }
+
+  // 1. 기존 곡선형 눈꺼풀로 눈 감기
+  drawLuckEye(0);
+  luckBlink.style.visibility = "visible";
+
+  await tweenLuckEye(0, 1, CLOSE_MS);
+
+  // 2. 완전히 감긴 순간 18 → 22 교체
+  const endingImage = luckEnding.querySelector("img");
+
+  endingImage.style.visibility = "hidden";
+  endingImage.src = image22.src;
+  endingImage.alt = "But, couldn’t I just try harder?";
+
+  // 3. 눈을 감은 상태 잠시 유지
+  await pauseLuck(HOLD_MS);
+
+  // 4. 눈 다시 뜨기
+  await tweenLuckEye(1, 0, OPEN_MS);
+
+  // 5. 눈꺼풀 제거
+  luckBlink.style.visibility = "hidden";
+  luckBlink.style.backgroundColor = "transparent";
+
+  await pauseLuck(500);
+  endingImage.style.visibility = "visible";
+  window.projectSounds?.play("tryHarderBoom");
+
+  // 22번 화면이 완전히 나타난 후
+// 1초가 지나야 08로 넘어가는 스크롤 허용
+canMoveTo08At = performance.now() + 1000;
+
+}, { passive: true });
+
+
+// ============================================
+// 22번 → 스크롤 → 눈 깜박임 → 08번 페이지
+// ============================================
+
+window.addEventListener("wheel", (e) => {
+
+  // 아래로 스크롤할 때만
+  if (e.deltaY <= 0) return;
+
+  // 22번 화면이 표시된 상태인지 확인
+  if (!movedTo22) return;
+
+  // 전환 중 중복 실행 방지
+  if (movingTo08) return;
+
+  // 22번이 나타난 뒤 1초 동안 대기
+  if (performance.now() < canMoveTo08At) return;
+
+  movingTo08 = true;
+
+  // index.html에 다음 페이지 요청
+  // index.html이 곡선형 눈 깜박임 실행
+  window.parent.postMessage(
+    { type: "NEXT_PAGE" },
+    window.location.origin
+  );
+
+}, { passive: true });
+
+
+
+window.installProjectScrollHint(() => !luckEnding.hidden && (movedTo22 ? !movingTo08 && performance.now() >= canMoveTo08At : performance.now() >= canMoveTo22At));
+})();
+</script>
+
+</body>
+</html>

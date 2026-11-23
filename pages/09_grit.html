@@ -1,0 +1,1242 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <style>
+
+@font-face {
+  font-family: "KkuBulLim";
+  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/2410-1@1.0/BMkkubulimTTF-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+}
+
+</style>
+
+  <title>09 — GRIT</title>
+
+  <!-- =========================================
+       ★ 여기서 모든 설정을 변경하면 돼! ★
+  ========================================== -->
+
+  <script>
+    const SETTINGS = {
+
+      // 1. 화면에 표시할 문장
+      MESSAGE: "WHY CAN SOME PEOPLE KEEP TRYING?",
+
+      // 2. 글씨 위치 (1920 × 3438.47 기준)
+      TEXT_X: 320,       // 커질수록 오른쪽
+      TEXT_Y: 635,       // 커질수록 아래쪽
+
+      // 3. 폰트 설정
+      FONT_FAMILY: "Roboto Slab, serif",
+      FONT_SIZE: 80,
+      FONT_WEIGHT: 400,
+      FONT_STYLE: "normal",
+
+      // 4. 글씨 간격
+      LETTER_SPACING: 0,
+
+      // 5. 글씨 색상
+      TEXT_COLOR: "#171717",
+
+      // 6. 글씨 정렬
+      // start = 왼쪽 기준
+      // middle = 가운데 기준
+      // end = 오른쪽 기준
+      TEXT_ANCHOR: "start",
+
+      // 7. 타이핑 속도 (ms)
+      TYPE_SPEED: 50,
+
+      // ★ 파란색 원 등장 시간 설정 ★
+GRIT_APPEAR_DELAY: 500,     // 등장 전 대기 시간
+GRIT_FADE_DURATION: 2000,   // 원이 나타나는 데 걸리는 시간
+GRIT_NEXT_TEXT_DELAY: 200,  // 원이 다 나온 후 다음 문장까지 대기
+
+      // 8. 타이핑 시작 위치
+      // 글씨가 화면 높이의 65% 지점에 오면 시작
+      TYPE_START: 0.65,
+
+      // 9. 커서 설정
+      CARET_WIDTH: 3,
+      CARET_GAP: 7,
+      CARET_HIDE_DELAY: 700
+
+    };
+  </script>
+
+
+  <style>
+
+
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      overflow-x: clip;
+      background: #ffffff;
+    }
+
+    /* 긴 종이 배경 */
+    #paper-page {
+      position: relative;
+      width: 100%;
+    }
+
+    #paper-image {
+      display: block;
+      width: 100%;
+      height: auto;
+
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    /* 종이와 정확히 같은 비율의 SVG 영역 */
+    #paper-overlay {
+      position: absolute;
+      inset: 0;
+
+      display: block;
+      width: 100%;
+      height: 100%;
+
+      pointer-events: none;
+      overflow: visible;
+    }
+
+    /* 타이핑되는 글씨 */
+    #typed-text {
+      white-space: pre;
+    }
+
+    /* 타이핑 커서 */
+    #typing-caret {
+      visibility: hidden;
+    }
+
+    #typing-caret.visible {
+      visibility: visible;
+      animation: caretBlink 0.8s steps(1) infinite;
+    }
+
+    @keyframes caretBlink {
+      50% {
+        opacity: 0;
+      }
+    }
+
+    /* 두 번째 문장 디자인 */
+#second-text {
+  font-family: Roboto Slab, serif;
+  font-size: 80px;
+  font-weight: 400;
+  letter-spacing: 0px;
+  fill: #171717;
+}
+
+#third-text {
+  font-family: "Roboto Slab", serif;
+  font-size: 80px;
+  font-weight: 400;
+  letter-spacing: 0px;
+  fill: #171717;
+}
+
+#fourth-text {
+  font-family: "Roboto Slab", serif;
+  font-size: 95px;
+  font-weight: 1000;
+  letter-spacing: 0px;
+  fill: #171717;
+}
+
+#fifth-text {
+  font-family: "Roboto Slab", serif;
+  font-size: 95px;
+  font-weight: 1000;
+  letter-spacing: 0px;
+  fill: #171717;
+}
+
+
+#sixth-text {
+  font-family: "Roboto Slab", serif;
+  font-size: 80px;
+  font-weight: 400;
+  letter-spacing: 0px;
+  fill: #171717;
+}
+
+#seventh-text {
+  font-family: "Roboto Slab", serif;
+  font-size: 95px;
+  font-weight: 1000;
+  letter-spacing: 0px;
+  fill: #171717;
+}
+
+#ninth-text {
+  font-family: "Roboto Slab", serif;
+  font-size: 80px;
+  font-weight: 400;
+  letter-spacing: 0px;
+  fill: #171717;
+}
+
+#tenth-text {
+  font-family: "Roboto Slab", serif;
+  font-size: 80px;
+  font-weight: 400;
+  letter-spacing: 0px;
+  fill: #171717;
+}
+
+
+  </style>
+<script src="../assets/project-sounds.js"></script>
+<script src="../assets/project-scroll-hint.js"></script>
+</head>
+
+
+<body>
+
+  <main id="paper-page">
+
+    <!-- 기존 종이 배경 유지 -->
+    <img
+      id="paper-image"
+      src="../assets/23.svg"
+      alt=""
+      draggable="false"
+    >
+
+    <!-- 글씨를 종이와 동일한 좌표에 표시 -->
+    <svg
+      id="paper-overlay"
+      viewBox="0 0 1920 3438.47"
+      preserveAspectRatio="none"
+    >
+
+      <text id="typed-text"></text>
+      <!-- 두 번째 문장 -->
+<text
+  id="second-text"
+  x="320"
+  y="960"
+></text>
+
+
+<!-- 세 번째 문장 -->
+<text
+  id="third-text"
+  x="320"
+  y="1070"
+></text>
+
+
+<!-- 네 번째 문장 -->
+<text
+  id="fourth-text"
+  x="320"
+  y="1395"
+></text>
+
+<!-- 다섯 번째 문장 -->
+<text
+  id="fifth-text"
+  x="320"
+  y="1500"
+></text>
+
+
+<!-- 여섯 번째 문장 -->
+<text
+  id="sixth-text"
+  x="320"
+  y="1830"
+></text>
+
+<!-- 일곱 번째 문장 -->
+<text
+  id="seventh-text"
+  x="320"
+  y="1940"
+></text>
+
+<text
+  id="eighth-text"
+  x="1190"
+  y="2045"
+  fill="#2f55ff"
+  font-family="KkuBulLim"
+  font-size="70"
+  font-weight="normal"
+  opacity="0"
+>
+</text>
+
+<!-- 아홉 번째 문장 -->
+<text
+  id="ninth-text"
+  x="320"
+  y="2260"
+></text>
+
+<!-- 열 번째 문장 -->
+<text
+  id="tenth-text"
+  x="320"
+  y="2370"
+></text>
+
+
+<!-- CONSCIENTIOUSNESS 파란색 밑줄 -->
+<svg
+  id="consciousness-underline"
+  x="800"
+  y="1940"
+  width="1100"
+  height="36"
+  viewBox="35 512 1060 45"
+  preserveAspectRatio="none"
+  style="
+    opacity: 0;
+    transition: opacity 1s ease;
+    pointer-events: none;
+  "
+>
+  <image
+    href="../assets/26-7.svg"
+    x="0"
+    y="0"
+    width="1133.69"
+    height="1065.17"
+  />
+</svg>
+
+
+<!-- 밑줄 아래 파란색 화살표 -->
+<svg
+  id="underline-arrow"
+  x="1020"
+  y="1965"
+  width="160"
+  height="115"
+  viewBox="500 600 150 110"
+  preserveAspectRatio="none"
+  style="
+    opacity: 0;
+    transition: opacity 0.8s ease;
+    pointer-events: none;
+  "
+>
+  <image
+    href="../assets/26-8.svg"
+    x="0"
+    y="0"
+    width="1133.69"
+    height="1302.21"
+  />
+</svg>
+
+
+
+
+<!-- 88 SAMPLES 다음에 나타나는 화살표 -->
+<svg
+  id="samples-arrow"
+  x="1030"
+  y="1395"
+  width="220"
+  height="330"
+  viewBox="470 442 195 305"
+  preserveAspectRatio="none"
+  style="
+    opacity: 0;
+    transition: opacity 0.8s ease;
+    pointer-events: none;
+  "
+>
+  <image
+    href="../assets/26-6.svg"
+    x="0"
+    y="0"
+    width="1133.69"
+    height="1183.65"
+  />
+</svg>
+
+
+
+
+<!-- GRIT 위에 원본 26.svg 얹기 -->
+<svg
+  id="grit-mark"
+  x="1250"
+  y="820"
+  width="330"
+  height="155"
+  viewBox="390 455 370 290"
+  preserveAspectRatio="none"
+  style="opacity: 0; pointer-events: none;"
+>
+  <image
+    href="../assets/26.svg"
+    x="0"
+    y="0"
+    width="1133.69"
+    height="1183.65"
+  />
+</svg>
+
+
+<!-- GRIT을 손으로 동그라미 치는 효과 -->
+
+<!-- GRIT을 손으로 동그라미 치는 효과 -->
+<svg
+  id="grit-mark"
+  x="0"
+  y="0"
+  width="300"
+  height="145"
+  viewBox="390 455 370 290"
+  preserveAspectRatio="none"
+  style="opacity: 0; pointer-events: none;"
+>
+  <defs>
+    <mask
+      id="grit-draw-mask"
+      maskUnits="userSpaceOnUse"
+      x="390"
+      y="455"
+      width="370"
+      height="290"
+    >
+      <path
+        id="grit-draw-path"
+        d="M 423 643
+           C 451 568 565 496 654 487
+           C 734 472 735 514 699 583
+           C 661 642 548 691 477 695
+           C 420 700 391 675 423 643"
+        fill="none"
+        stroke="white"
+        stroke-width="35"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </mask>
+  </defs>
+
+  <image
+    href="../assets/26.svg"
+    x="0"
+    y="0"
+    width="1133.69"
+    height="1183.65"
+    mask="url(#grit-draw-mask)"
+  />
+</svg>
+
+
+
+
+      <line id="typing-caret"></line>
+
+    </svg>
+
+  </main>
+
+
+  <script>
+    (() => {
+
+      // ======================================
+      // 1. HTML 요소 가져오기
+      // ======================================
+
+      const paper =
+        document.getElementById("paper-page");
+
+      const overlay =
+        document.getElementById("paper-overlay");
+
+      const text =
+        document.getElementById("typed-text");
+
+      const caret =
+        document.getElementById("typing-caret");
+
+      let typingSound;
+      function stopTypingSound() {
+        typingSound?.abort();
+        typingSound = undefined;
+      }
+
+      window.addEventListener('pagehide', stopTypingSound);
+
+      function revealTypedText(element, message, count) {
+        if (count === 1) {
+          stopTypingSound();
+          typingSound = new AbortController();
+          window.projectSounds?.play('gritTyping', { signal: typingSound.signal });
+        }
+        element.textContent = message.slice(0, count);
+        if (count === message.length) stopTypingSound();
+      }
+
+
+      // ======================================
+      // 2. 상단 설정 적용
+      // ======================================
+
+      text.setAttribute("x", SETTINGS.TEXT_X);
+      text.setAttribute("y", SETTINGS.TEXT_Y);
+
+      text.setAttribute(
+        "text-anchor",
+        SETTINGS.TEXT_ANCHOR
+      );
+
+      text.style.fontFamily =
+        SETTINGS.FONT_FAMILY;
+
+      text.style.fontSize =
+        SETTINGS.FONT_SIZE + "px";
+
+      text.style.fontWeight =
+        SETTINGS.FONT_WEIGHT;
+
+      text.style.fontStyle =
+        SETTINGS.FONT_STYLE;
+
+      text.style.letterSpacing =
+        SETTINGS.LETTER_SPACING + "px";
+
+      text.style.fill =
+        SETTINGS.TEXT_COLOR;
+
+      caret.style.stroke =
+        SETTINGS.TEXT_COLOR;
+
+      caret.style.strokeWidth =
+        SETTINGS.CARET_WIDTH;
+
+
+      // ======================================
+      // 3. 타이핑 상태
+      // ======================================
+
+      let started = false;
+      let index = 0;
+
+
+      // ======================================
+      // 4. 커서 위치 자동 계산
+      // ======================================
+
+      function updateCaret() {
+
+        let cursorX = SETTINGS.TEXT_X;
+
+        if (text.textContent.length > 0) {
+
+          // 실제 렌더링된 글씨의 오른쪽 끝
+          const bounds = text.getBBox();
+
+          cursorX =
+            bounds.x +
+            bounds.width +
+            SETTINGS.CARET_GAP;
+
+        }
+
+        const cursorTop =
+          SETTINGS.TEXT_Y -
+          SETTINGS.FONT_SIZE * 0.85;
+
+        const cursorBottom =
+          SETTINGS.TEXT_Y +
+          SETTINGS.FONT_SIZE * 0.1;
+
+        caret.setAttribute("x1", cursorX);
+        caret.setAttribute("x2", cursorX);
+
+        caret.setAttribute("y1", cursorTop);
+        caret.setAttribute("y2", cursorBottom);
+
+      }
+
+
+// 두 번째 문장 타이핑
+
+
+// ======================================
+// ★ GRIT 동그라미 설정 ★
+// 여기서 자유롭게 조정!
+// ======================================
+
+const GRIT_MARK_X = 0;        // 좌우 미세 조정
+const GRIT_MARK_Y = 0;        // 상하 미세 조정
+const GRIT_MARK_WIDTH = 0;    // 동그라미 너비 추가
+const GRIT_MARK_HEIGHT = 145; // 동그라미 높이
+const GRIT_DRAW_SPEED = 300;  // 그리는 시간 (0.9초)
+
+
+// ======================================
+// GRIT을 펜으로 동그라미 치는 효과
+// ======================================
+
+
+function drawGritMark() {
+
+  const second =
+    document.getElementById("second-text");
+
+  const mark =
+    document.getElementById("grit-mark");
+
+  // GRIT 글자의 실제 위치 찾기
+  const wordIndex =
+    second.textContent.lastIndexOf("GRIT");
+
+  if (wordIndex < 0) return;
+
+  const wordPosition =
+    second.getStartPositionOfChar(wordIndex);
+
+  const wordWidth =
+    second.getSubStringLength(wordIndex, 4);
+
+  const textY =
+    Number(second.getAttribute("y"));
+
+  // ======================================
+  // ★ 여기서 동그라미 위치와 크기 조절 ★
+  // ======================================
+
+  const MARK_X = -90;      // 좌우 위치
+  const MARK_Y = -175;     // 상하 위치
+  const MARK_WIDTH = 200;   // 글자보다 넓어지는 정도
+  const MARK_HEIGHT = 285; // 세로 크기
+
+  mark.setAttribute(
+    "x",
+    wordPosition.x + MARK_X
+  );
+
+  mark.setAttribute(
+    "y",
+    textY + MARK_Y
+  );
+
+  mark.setAttribute(
+    "width",
+    wordWidth + MARK_WIDTH
+  );
+
+  mark.setAttribute(
+    "height",
+    MARK_HEIGHT
+  );
+
+  // 원본 SVG를 한 번에 표시
+  mark.style.transition = "opacity 0.1s ease"; mark.style.opacity = "1";
+}
+
+
+function waitForLineScroll(element, callback) {
+
+  function check() {
+    const rect = overlay.getBoundingClientRect();
+
+    const y = Number(element.getAttribute("y"));
+
+    const screenY =
+      rect.top + (y / 3438.47) * rect.height;
+
+    // 해당 문장이 화면 높이 55%까지 올라오면 시작
+    if (
+      window.scrollY > 5 &&
+      screenY <= window.innerHeight * 0.55
+    ) {
+      window.removeEventListener("scroll", check);
+      callback();
+    }
+  }
+
+  window.addEventListener("scroll", check, {
+    passive: true
+  });
+
+  check();
+}
+
+
+      
+// ======================================
+// 두 번째 문장 타이핑
+// ======================================
+
+function typeSecond() {
+
+  const second = document.getElementById("second-text");
+  const message = "PSYCHOLOGISTS CALL IT GRIT.";
+
+  let i = 0;
+
+  function next() {
+
+    if (i >= message.length) {
+
+  drawGritMark();
+    setTimeout(typeThird, 1400);
+
+  return;
+}
+
+    i++;
+
+    revealTypedText(second, message, i);
+
+    setTimeout(next, SETTINGS.TYPE_SPEED);
+  }
+
+  // 첫 번째 문장 완료 후 0.8초 대기
+  waitForLineScroll(second, next);
+}
+
+
+// ======================================
+// 세 번째 문장 타이핑
+// ======================================
+
+function typeThird() {
+
+  const third = document.getElementById("third-text");
+  const message = "THE TENDENCY TO KEEP GOING.";
+
+  let i = 0;
+
+  function next() {
+
+    if (i >= message.length) {
+  setTimeout(typeFourth, 400);
+  return;
+}
+
+    i++;
+
+    revealTypedText(third, message, i);
+
+    setTimeout(next, SETTINGS.TYPE_SPEED);
+  }
+
+  waitForLineScroll(third, next);
+}
+
+
+// ======================================
+// 네 번째 문장 타이핑
+// ======================================
+
+function typeFourth() {
+
+  const fourth = document.getElementById("fourth-text");
+  const message = "66,807 PEOPLE";
+
+  let i = 0;
+
+  function next() {
+
+    if (i >= message.length) {
+  setTimeout(typeFifth, 400);
+  return;
+}
+
+    i++;
+
+    revealTypedText(fourth, message, i);
+
+    setTimeout(next, SETTINGS.TYPE_SPEED);
+  }
+
+  waitForLineScroll(fourth, next);
+}
+
+
+// ======================================
+// 다섯 번째 문장 타이핑
+// ======================================
+
+function typeFifth() {
+
+  const fifth = document.getElementById("fifth-text");
+  const message = "88 SAMPLES";
+
+  let i = 0;
+
+  function next() {
+
+    
+
+if (i >= message.length) {
+
+  // 파란색 화살표 등장
+  setTimeout(() => {
+    document.getElementById("samples-arrow").style.opacity = "1";
+  }, 300);
+
+  // 화살표가 나타난 뒤 여섯 번째 문장 준비
+  setTimeout(typeSixth, 1500);
+
+  return;
+}
+
+
+
+    i++;
+
+    revealTypedText(fifth, message, i);
+
+    setTimeout(next, SETTINGS.TYPE_SPEED);
+  }
+
+  // 화면 중간까지 스크롤했을 때 시작
+  waitForLineScroll(fifth, next);
+}
+
+
+// ======================================
+// 여섯 번째 문장 타이핑
+// ======================================
+
+function typeSixth() {
+
+  const sixth = document.getElementById("sixth-text");
+  const message = "A STRONG OVERLAP BETWEEN";
+
+  let i = 0;
+
+  function next() {
+
+    if (i >= message.length) {
+  setTimeout(typeSeventh, 400);
+  return;
+}
+
+    i++;
+
+    revealTypedText(sixth, message, i);
+
+    setTimeout(next, SETTINGS.TYPE_SPEED);
+  }
+
+  // 화면 중간까지 스크롤하면 타이핑 시작
+  waitForLineScroll(sixth, next);
+}
+
+
+// 일곱 번째 문장 타이핑
+function typeSeventh() {
+
+  const seventh = document.getElementById("seventh-text");
+  const message = "GRIT AND CONSCIENTIOUSNESS.";
+
+  let i = 0;
+
+  function next() {
+
+    if (i >= message.length) {
+
+  // 타이핑 완료 0.3초 후 밑줄 등장
+  setTimeout(() => {
+    document.getElementById(
+      "consciousness-underline"
+    ).style.opacity = "1";
+  }, 300);
+
+  // 밑줄이 나타난 다음 화살표 등장
+setTimeout(() => {
+  document.getElementById("underline-arrow").style.opacity = "1";
+
+  setTimeout(() => {
+    typeEighth();
+  }, 500); // 화살표 나온 뒤 0.5초 후 문장 시작
+}, 1500);
+
+  return;
+}
+
+    i++;
+
+    revealTypedText(seventh, message, i);
+
+    setTimeout(next, SETTINGS.TYPE_SPEED);
+  }
+
+  // 스크롤해서 화면 중간에 오면 시작
+  waitForLineScroll(seventh, next);
+}
+
+function typeEighth() {
+  const eighth = document.getElementById("eighth-text");
+  const message = "which is our personality";
+
+  let i = 0;
+  eighth.style.opacity = "1";
+
+  function next() {
+    if (i >= message.length) {
+  setTimeout(typeNinth, 400);
+  return;
+}
+
+    i++;
+    revealTypedText(eighth, message, i);
+
+    setTimeout(next, SETTINGS.TYPE_SPEED);
+  }
+
+  next();
+}
+
+
+// 아홉 번째 문장 타이핑
+function typeNinth() {
+
+  const ninth = document.getElementById("ninth-text");
+  const message = "SO MAYBE ...";
+
+  let i = 0;
+
+  function next() {
+
+    if (i >= message.length) {
+  setTimeout(typeTenth, 400);
+  return;
+}
+
+    i++;
+    revealTypedText(ninth, message, i);
+
+    setTimeout(next, SETTINGS.TYPE_SPEED);
+  }
+
+  // 스크롤해서 화면 중간에 도달하면 시작
+  waitForLineScroll(ninth, next);
+}
+
+
+// 열 번째 문장 타이핑
+function typeTenth() {
+
+  const tenth = document.getElementById("tenth-text");
+  const message = "TRYING HARDER ISN’T JUST A CHOICE";
+
+  let i = 0;
+
+  function next() {
+
+    if (i >= message.length) return;
+
+    i++;
+    revealTypedText(tenth, message, i);
+
+    setTimeout(next, SETTINGS.TYPE_SPEED);
+  }
+
+  // 화면 중간에 도달하면 타이핑 시작
+  waitForLineScroll(tenth, next);
+}
+
+
+
+
+
+
+
+
+      // ======================================
+      // 5. 타이핑 효과
+      // ======================================
+
+      function typeNext() {
+
+        if (index >= SETTINGS.MESSAGE.length) {
+
+          // 타이핑 완료 후 커서 숨기기
+          setTimeout(() => {
+
+            caret.classList.remove("visible");
+
+          }, SETTINGS.CARET_HIDE_DELAY);
+
+          typeSecond(); // 두 번째 문장 시작
+
+          return;
+        }
+
+        index++;
+
+        revealTypedText(text, SETTINGS.MESSAGE, index);
+
+        updateCaret();
+
+        setTimeout(
+          typeNext,
+          SETTINGS.TYPE_SPEED
+        );
+
+      }
+
+
+      // ======================================
+      // 6. 스크롤 위치 확인
+      // ======================================
+
+      function checkScroll() {
+
+        if (started) return;
+
+        const rect =
+          overlay.getBoundingClientRect();
+
+        // 종이 좌표를 실제 화면 좌표로 변환
+        const textScreenY =
+          rect.top +
+          (SETTINGS.TEXT_Y / 3438.47) *
+          rect.height;
+
+        // 실제로 스크롤했고,
+        // 글씨가 지정된 높이에 도달했을 때
+        if (
+          window.scrollY > 5 &&
+          textScreenY <=
+            window.innerHeight * SETTINGS.TYPE_START
+        ) {
+
+          started = true;
+
+          updateCaret();
+          caret.classList.add("visible");
+
+          typeNext();
+
+        }
+
+      }
+
+
+      // ======================================
+      // 7. 스크롤 이벤트
+      // ======================================
+
+      window.addEventListener(
+        "scroll",
+        checkScroll,
+        { passive: true }
+      );
+
+      window.addEventListener(
+        "resize",
+        checkScroll
+      );
+
+      window.addEventListener(
+        "load",
+        checkScroll
+      );
+
+      checkScroll();
+
+    })();
+  </script>
+<script>
+function trimPaper() {
+  const paper = document.getElementById("paper-page");
+  const image = document.getElementById("paper-image");
+  const overlay = document.getElementById("paper-overlay");
+  const lastText = document.getElementById("tenth-text");
+
+  // 마지막 문장 아래로 보여줄 종이 길이
+  const BOTTOM_SPACE = 700;
+
+  const fullHeight = image.getBoundingClientRect().height;
+  const svgHeight = overlay.viewBox.baseVal.height;
+  const lastY = Number(lastText.getAttribute("y"));
+
+  overlay.style.height = fullHeight + "px";
+  paper.style.height =
+    (lastY + BOTTOM_SPACE) / svgHeight * fullHeight + "px";
+
+  paper.style.overflow = "hidden";
+}
+
+window.addEventListener("load", trimPaper);
+window.addEventListener("resize", trimPaper);
+</script>
+
+
+<script>
+/* ===========================================
+   09 → 10 페이지 전환
+   마지막 문장 완료 → 2초 잠금 → 스크롤 → 눈 깜박임
+=========================================== */
+
+(() => {
+  const lastText = document.getElementById("tenth-text");
+
+  const FINAL_MESSAGE = "TRYING HARDER ISN’T JUST A CHOICE";
+  const SCROLL_LOCK_MS = 2000;
+
+  // typing → locked → ready → leaving
+  let state = "typing";
+  let lockedScrollY = 0;
+  let touchStartY = 0;
+
+  // 마지막 문장이 모두 출력되었을 때
+  function onLastSentenceComplete() {
+    if (state !== "typing") return;
+
+    state = "locked";
+    lockedScrollY = window.scrollY;
+
+    // 2초 후 스크롤 전환 허용
+    setTimeout(() => {
+      if (state === "locked") {
+        state = "ready";
+      }
+    }, SCROLL_LOCK_MS);
+  }
+
+  // 마지막 문장의 타이핑 완료 감지
+  const observer = new MutationObserver(() => {
+    if (lastText.textContent === FINAL_MESSAGE) {
+      observer.disconnect();
+      onLastSentenceComplete();
+    }
+  });
+
+  observer.observe(lastText, {
+    childList: true,
+    characterData: true,
+    subtree: true
+  });
+
+  // 이미 타이핑이 끝난 경우도 처리
+  if (lastText.textContent === FINAL_MESSAGE) {
+    observer.disconnect();
+    onLastSentenceComplete();
+  }
+
+  // 10 페이지로 이동
+  function goToNextPage() {
+    if (state !== "ready") return;
+
+    state = "leaving";
+
+    // index.html의 기존 눈 깜박임 전환 실행
+    if (window.parent !== window) {
+      window.parent.postMessage(
+        { type: "NEXT_PAGE" },
+        "*"
+      );
+    } else {
+      // 09 파일을 단독 실행했을 때의 이동
+      window.location.href = "10_sequence.html";
+    }
+  }
+
+  // 마우스 휠 / 트랙패드
+  window.addEventListener("wheel", (e) => {
+
+    if (state === "locked") {
+      e.preventDefault();
+      return;
+    }
+
+    if (state === "ready" && e.deltaY > 5) {
+      e.preventDefault();
+      goToNextPage();
+    }
+
+  }, { passive: false, capture: true });
+
+  // 잠금 중 실제 스크롤 위치 고정
+  window.addEventListener("scroll", () => {
+    if (
+      state === "locked" &&
+      Math.abs(window.scrollY - lockedScrollY) > 1
+    ) {
+      window.scrollTo(0, lockedScrollY);
+    }
+  }, { passive: true });
+
+  // 모바일 터치 시작
+  window.addEventListener("touchstart", (e) => {
+    touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+
+  // 잠금 중 및 전환 대기 중 터치 스크롤 방지
+  window.addEventListener("touchmove", (e) => {
+    if (state === "locked" || state === "ready") {
+      e.preventDefault();
+    }
+  }, { passive: false, capture: true });
+
+  // 손가락을 위로 밀면 다음 페이지
+  window.addEventListener("touchend", (e) => {
+    if (state !== "ready") return;
+
+    const touchEndY = e.changedTouches[0].clientY;
+
+    if (touchStartY - touchEndY > 40) {
+      goToNextPage();
+    }
+  });
+
+  // 키보드 스크롤 지원
+  window.addEventListener("keydown", (e) => {
+    const scrollKeys = [
+      "ArrowDown", "ArrowUp",
+      "PageDown", "PageUp",
+      "Home", "End", " "
+    ];
+
+    if (!scrollKeys.includes(e.key)) return;
+
+    if (state === "locked") {
+      e.preventDefault();
+    }
+
+    if (
+      state === "ready" &&
+      ["ArrowDown", "PageDown", "End", " "].includes(e.key)
+    ) {
+      e.preventDefault();
+      goToNextPage();
+    }
+  }, { capture: true });
+
+
+window.installProjectScrollHint(() => state === "ready");
+})();
+</script>
+
+</body>
+</html>

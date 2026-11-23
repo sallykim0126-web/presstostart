@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<title>PRESTO SUCCEED — Access</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:#000;color:#fff;overflow:hidden}
+body{display:grid;place-items:center;font-family:Arial,Helvetica,sans-serif}
+#stage{position:relative;width:min(100vw,calc(100dvh * 1366 / 768));height:min(100dvh,calc(100vw * 768 / 1366));overflow:hidden;background:#000;isolation:isolate}
+.scene{position:absolute;inset:0;width:100%;height:100%;display:block}
+#second{display:none}
+.code-grid{
+  position:absolute;
+  left:8.954%;
+  top:51.175%;
+  width:82.091%;
+  height:24.009%;
+  display:flex;
+  align-items:stretch;
+  justify-content:space-between;
+}
+
+.digit{
+  width:12.565%;
+  height:100%;
+  padding:0;
+  border:0;
+  outline:none;
+  border-radius:0;
+  background:transparent;
+  color:#fff;
+  text-align:center;
+  font-family:'Roboto Slab', monospace;
+  font-size:clamp(18px,5.2vw,85px);
+  font-weight:bold;
+  text-transform:uppercase;
+  caret-color:#fff;
+}
+.digit:focus{box-shadow:inset 0 -4px rgba(255,255,255,.6)}
+#hint{position:absolute;left:0;right:0;top:80%;text-align:center;color:#bbb;font:clamp(10px,1.05vw,15px) 'Courier New',monospace;min-height:2em}
+/* 곡선형 눈꺼풀 전환 */
+#blink{position:absolute;inset:0;z-index:100;pointer-events:none;visibility:hidden}
+#blink svg{width:100%;height:100%;display:block}
+@media(max-width:600px){.digit{font-size:5.4vw}#hint{font-size:1.5vw}}
+</style>
+<script src="../assets/project-sounds.js"></script>
+<script src="../assets/project-scroll-hint.js"></script>
+</head>
+<body>
+<main id="stage">
+  <div id="first" class="scene">
+    <img class="scene" id="firstArt" alt="Enter your access code — six boxes">
+    <div class="code-grid" aria-label="6자리 액세스 코드 입력">
+      <input class="digit" maxlength="1" inputmode="text" autocomplete="off" aria-label="첫 번째 글자" spellcheck="false">
+      <input class="digit" maxlength="1" inputmode="text" autocomplete="off" aria-label="두 번째 글자" spellcheck="false">
+      <input class="digit" maxlength="1" inputmode="text" autocomplete="off" aria-label="세 번째 글자" spellcheck="false">
+      <input class="digit" maxlength="1" inputmode="text" autocomplete="off" aria-label="네 번째 글자" spellcheck="false">
+      <input class="digit" maxlength="1" inputmode="text" autocomplete="off" aria-label="다섯 번째 글자" spellcheck="false">
+      <input class="digit" maxlength="1" inputmode="text" autocomplete="off" aria-label="여섯 번째 글자" spellcheck="false">
+    </div>
+    <div id="hint" role="status" aria-live="polite"></div>
+  </div>
+  <img id="second" class="scene" alt="YOU DIDN'T TRY HARD ENOUGH.">
+  <div id="blink" aria-hidden="true">
+    <svg viewBox="0 0 1000 600" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <filter id="softEyelidEdge" x="-5%" y="-8%" width="110%" height="116%" color-interpolation-filters="sRGB">
+          <feGaussianBlur stdDeviation="17" />
+        </filter>
+      </defs>
+      <path id="eyelidTop" filter="url(#softEyelidEdge)" fill="#000" />
+      <path id="eyelidBottom" fill="#000" filter="url(#softEyelidEdge)" />
+    </svg>
+  </div>
+</main>
+<script>
+  const SVG_FIRST = '../assets/01-06.svg';
+const SVG_SECOND = 'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iX+ugiOydtOyWtF8xIiBkYXRhLW5hbWU9IuugiOydtOyWtCAxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMzY2IDc2OCI+CiAgPGRlZnM+CiAgICA8c3R5bGU+CiAgICAgIC5jbHMtMSB7CiAgICAgICAgZmlsbDogI2ZmZjsKICAgICAgfQogICAgPC9zdHlsZT4KICA8L2RlZnM+CiAgPHJlY3QgeD0iLTEuMTIiIHk9Ii0zLjM3IiB3aWR0aD0iMTM3MS44NCIgaGVpZ2h0PSI3NzQuMjEiLz4KICA8Zz4KICAgIDxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTI0Ni4wOCwyNTcuNDZsMTMuOTEsMzAuODEsMTMuOTEtMzAuODFoMjQuODNsLTI3Ljk1LDUzLjgydjM1Ljg4aC0yMS41OHYtMzUuODhsLTI3Ljk1LTUzLjgyaDI0LjgzWiIvPgogICAgPHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMzM3LjM0LDM0OC40NmMtMjAuNDEsMC0zNS4zNi0xMi4zNS0zNS4zNi0zOS4xM3YtMTQuMDRjMC0yNy4wNCwxNC45NS0zOS4xMywzNS4zNi0zOS4xM3MzNS4zNiwxMi4wOSwzNS4zNiwzOS4xM3YxNC4wNGMwLDI2Ljc4LTE0Ljk1LDM5LjEzLTM1LjM2LDM5LjEzWk0zMjMuNTYsMzA5LjMzYzAsMTQuNjksNC44MSwyMS4xOSwxMy43OCwyMS4xOXMxMy43OC02LjUsMTMuNzgtMjEuMTl2LTE0LjA0YzAtMTQuNjktNC44MS0yMS4xOS0xMy43OC0yMS4xOXMtMTMuNzgsNi41LTEzLjc4LDIxLjE5djE0LjA0WiIvPgogICAgPHBhdGggY2xhc3M9ImNscy0xIiBkPSJNNDU3LjA3LDI1Ny40NnY1My40M2MwLDI2LjUyLTE1LjQ3LDM3LjU3LTM1LjM2LDM3LjU3cy0zNS4zNi0xMS4wNS0zNS4zNi0zNy40NHYtNTMuNTZoMjEuNTh2NTMuNTZjMCwxMy4xMywzLjksMTkuNSwxMy43OCwxOS41czEzLjc4LTYuMzcsMTMuNzgtMTkuNXYtNTMuNTZoMjEuNThaIi8+CiAgICA8cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik01MDUuMTYsMzQ3LjE2di04OS43aDMzLjQxYzIwLjQxLDAsMzUuMzYsMTAuMDEsMzUuMzYsMzguMzV2MTNjMCwyOC4wOC0xNC45NSwzOC4zNS0zNS4zNiwzOC4zNWgtMzMuNDFaTTU1Mi4zNiwzMDguODF2LTEzYzAtMTIuMDktMi42LTIwLjQxLTEzLjc4LTIwLjQxaC0xMS44M3Y1My44MmgxMS44M2MxMS4xOCwwLDEzLjc4LTguMzIsMTMuNzgtMjAuNDFaIi8+CiAgICA8cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik02MTAuNDYsMzQ3LjE2aC0yMS41OHYtODkuN2gyMS41OHY4OS43WiIvPgogICAgPHBhdGggY2xhc3M9ImNscy0xIiBkPSJNNjI3LjM2LDM0Ny4xNnYtODkuN2gzMy40MWMyMC40MSwwLDM1LjM2LDEwLjAxLDM1LjM2LDM4LjM1djEzYzAsMjguMDgtMTQuOTUsMzguMzUtMzUuMzYsMzguMzVoLTMzLjQxWk02NzQuNTUsMzA4Ljgxdi0xM2MwLTEyLjA5LTIuNi0yMC40MS0xMy43OC0yMC40MWgtMTEuODN2NTMuODJoMTEuODNjMTEuMTgsMCwxMy43OC04LjMyLDEzLjc4LTIwLjQxWiIvPgogICAgPHBhdGggY2xhc3M9ImNscy0xIiBkPSJNNzgwLjUsMjU3LjQ2djg5LjdoLTE3LjQybC0zMy4wMi00OS42NnY0OS42NmgtMjAuMjh2LTg5LjdoMTcuMTZsMzMuMjgsNTAuMzF2LTUwLjMxaDIwLjI4WiIvPgogICAgPHBhdGggY2xhc3M9ImNscy0xIiBkPSJNODExLjE4LDI4Mi4wM2gtMTcuNjh2LTI0LjU3aDE3LjY4djI0LjU3WiIvPgogICAgPHBhdGggY2xhc3M9ImNscy0xIiBkPSJNODg2LjA2LDI1Ny40NnYxNy45NGgtMjMuNHY3MS43NmgtMjEuNTh2LTcxLjc2aC0yMy40di0xNy45NGg2OC4zOFoiLz4KICAgIDxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTk4OS41NCwyNTcuNDZ2MTcuOTRoLTIzLjR2NzEuNzZoLTIxLjU4di03MS43NmgtMjMuNHYtMTcuOTRoNjguMzhaIi8+CiAgICA8cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0xMDQ2LjM1LDM0Ny4xNmwtMTQuOTUtMzMuOTNoLTExLjE4djMzLjkzaC0yMS41OHYtODkuN2gzMy44YzIwLjY3LDAsMzMuOTMsOS40OSwzMy45MywyOC4yMSwwLDExLjctNS4yLDE5LjYzLTE0LjMsMjMuNzlsMTcuOTQsMzcuN2gtMjMuNjZaTTEwMjkuODQsMjk1LjI5YzguNzEsMCwxNC45NS0xLjE3LDE0Ljk1LTkuNjJzLTYuMjQtMTAuMjctMTQuOTUtMTAuMjdoLTkuNjJ2MTkuODloOS42MloiLz4KICAgIDxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTEwOTIuMSwyNTcuNDZsMTMuOTEsMzAuODEsMTMuOTEtMzAuODFoMjQuODNsLTI3Ljk1LDUzLjgydjM1Ljg4aC0yMS41OHYtMzUuODhsLTI3Ljk1LTUzLjgyaDI0LjgzWiIvPgogICAgPHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMjY3LjA3LDQ0Ny43OGgyNy41NnYtMzQuMzJoMjEuNTh2ODkuN2gtMjEuNTh2LTM3LjQ0aC0yNy41NnYzNy40NGgtMjEuNTh2LTg5LjdoMjEuNTh2MzQuMzJaIi8+CiAgICA8cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0zMjIuNzEsNTAzLjE2bDMxLjItODkuN2gyMC44bDMxLjIsODkuN2gtMjMuMDFsLTQuODEtMTUuMzRoLTI3LjY5bC00LjY4LDE1LjM0aC0yMy4wMVpNMzU1Ljk5LDQ2OS44OGgxNi41MWwtOC4xOS0yNi41Mi04LjMyLDI2LjUyWiIvPgogICAgPHBhdGggY2xhc3M9ImNscy0xIiBkPSJNNDYwLjEyLDUwMy4xNmwtMTQuOTUtMzMuOTNoLTExLjE4djMzLjkzaC0yMS41OHYtODkuN2gzMy44YzIwLjY3LDAsMzMuOTMsOS40OSwzMy45MywyOC4yMSwwLDExLjctNS4yLDE5LjYzLTE0LjMsMjMuNzlsMTcuOTQsMzcuN2gtMjMuNjZaTTQ0My42MSw0NTEuMjljOC43MSwwLDE0Ljk1LTEuMTcsMTQuOTUtOS42MnMtNi4yNC0xMC4yNy0xNC45NS0xMC4yN2gtOS42MnYxOS44OWg5LjYyWiIvPgogICAgPHBhdGggY2xhc3M9ImNscy0xIiBkPSJNNDkzLjUzLDUwMy4xNnYtODkuN2gzMy40MWMyMC40MSwwLDM1LjM2LDEwLjAxLDM1LjM2LDM4LjM1djEzYzAsMjguMDgtMTQuOTUsMzguMzUtMzUuMzYsMzguMzVoLTMzLjQxWk01NDAuNzIsNDY0Ljgxdi0xM2MwLTEyLjA5LTIuNi0yMC40MS0xMy43OC0yMC40MWgtMTEuODN2NTMuODJoMTEuODNjMTEuMTgsMCwxMy43OC04LjMyLDEzLjc4LTIwLjQxWiIvPgogICAgPHBhdGggY2xhc3M9ImNscy0xIiBkPSJNNjY1LjEzLDQxMy40NnYxNy45NGgtMzUuMXYxNi4zOGgzMS4ydjE3Ljk0aC0zMS4ydjE5LjVoMzUuMXYxNy45NGgtNTYuNjh2LTg5LjdoNTYuNjhaIi8+CiAgICA8cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik03NDYuOSw0MTMuNDZ2ODkuN2gtMTcuNDJsLTMzLjAyLTQ5LjY2djQ5LjY2aC0yMC4yOHYtODkuN2gxNy4xNmwzMy4yOCw1MC4zMXYtNTAuMzFoMjAuMjhaIi8+CiAgICA8cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik03OTUuOTEsNTA0LjQ2Yy0yMC40MSwwLTM1LjM2LTEyLjM1LTM1LjM2LTM5LjEzdi0xNC4wNGMwLTI3LjA0LDE0Ljk1LTM5LjEzLDM1LjM2LTM5LjEzczM1LjM2LDEyLjA5LDM1LjM2LDM5LjEzdjE0LjA0YzAsMjYuNzgtMTQuOTUsMzkuMTMtMzUuMzYsMzkuMTNaTTc4Mi4xMyw0NjUuMzNjMCwxNC42OSw0LjgxLDIxLjE5LDEzLjc4LDIxLjE5czEzLjc4LTYuNSwxMy43OC0yMS4xOXYtMTQuMDRjMC0xNC42OS00LjgxLTIxLjE5LTEzLjc4LTIxLjE5cy0xMy43OCw2LjUtMTMuNzgsMjEuMTl2MTQuMDRaIi8+CiAgICA8cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik05MTUuNjQsNDEzLjQ2djUzLjQzYzAsMjYuNTItMTUuNDcsMzcuNTctMzUuMzYsMzcuNTdzLTM1LjM2LTExLjA1LTM1LjM2LTM3LjQ0di01My41NmgyMS41OHY1My41NmMwLDEzLjEzLDMuOSwxOS41LDEzLjc4LDE5LjVzMTMuNzgtNi4zNywxMy43OC0xOS41di01My41NmgyMS41OFoiLz4KICAgIDxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTk5Ny42Niw0NTUuNzF2OS42MmMwLDI2Ljc4LTEyLjYxLDM5LjEzLTMzLjAyLDM5LjEzcy0zNS4zNi0xMi4zNS0zNS4zNi0zOS4xM3YtMTIuMjJjMC0yOC44NiwxNC45NS00MC45NSwzNS4zNi00MC45NXMzMC40MiwxMS40NCwzMy4wMiwyOC45OWgtMjAuNTRjLS45MS01LjU5LTQuNjgtMTEuMDUtMTIuNDgtMTEuMDUtOC45NywwLTEzLjc4LDYuNS0xMy43OCwyMS4xOXYxNC4wNGMwLDE0LjY5LDQuODEsMjEuMTksMTMuNzgsMjEuMTlzMTEuNTctNS40NiwxMi4zNS0xMi44N2gtMTEuOTZ2LTE3Ljk0aDMyLjYzWiIvPgogICAgPHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMTAzMi44OSw0NDcuNzhoMjcuNTZ2LTM0LjMyaDIxLjU4djg5LjdoLTIxLjU4di0zNy40NGgtMjcuNTZ2MzcuNDRoLTIxLjU4di04OS43aDIxLjU4djM0LjMyWiIvPgogICAgPHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMTEyMC41MSw1MDMuMTZoLTIyLjg4di0yMi44OGgyMi44OHYyMi44OFoiLz4KICA8L2c+Cjwvc3ZnPg==';
+document.getElementById('firstArt').src = SVG_FIRST;
+document.getElementById('second').src = SVG_SECOND;
+
+// 재사용 가능한 곡선형 눈꺼풀 전환. duration 단위는 ms.
+const EYELID_CLOSE_MS = 850;
+const EYELID_OPEN_MS = 950;
+const EYELID_HOLD_MS = 200;
+let eyelidBusy = false;
+function drawEyelids(progress) {
+  const p = Math.max(0, Math.min(1, progress));
+  const edge = 300 * p;
+  // 중간에는 눈꺼풀이 둥글고, 다 감겼을 때는 틈 없이 평평하게 닫힘
+  const curve = 190 * Math.sin(Math.PI * p);
+  const upper = `M 0 0 H 1000 V ${edge} Q 500 ${edge + curve} 0 ${edge} Z`;
+  const lowerY = 600 - edge;
+  const lower = `M 0 600 H 1000 V ${lowerY} Q 500 ${lowerY - curve} 0 ${lowerY} Z`;
+  document.getElementById('blink').style.backgroundColor = p >= 0.999 ? '#000' : 'transparent';
+  document.getElementById('eyelidTop').setAttribute('d', upper);
+  document.getElementById('eyelidBottom').setAttribute('d', lower);
+}
+function eyelidAnimate(from, to, duration) {
+  if (from === 0 && to === 1) window.projectSounds?.play('blink');
+  return new Promise(resolve => {
+    const started = performance.now();
+    function frame(now) {
+      const t = Math.min(1, (now - started) / duration);
+      const eased = t < .5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2;
+      drawEyelids(from + (to-from)*eased);
+      if(t < 1) requestAnimationFrame(frame);
+      else resolve();
+    }
+    requestAnimationFrame(frame);
+  });
+}
+async function blinkTransition(callback) {
+  if (eyelidBusy) return;
+  eyelidBusy = true;
+  const overlay = document.getElementById('blink');
+  overlay.style.visibility = 'visible';
+  drawEyelids(0);
+  try {
+    await eyelidAnimate(0, 1, EYELID_CLOSE_MS);
+    callback(); // 눈을 완전히 감았을 때 화면 교체
+    await new Promise(resolve => setTimeout(resolve, EYELID_HOLD_MS));
+    await eyelidAnimate(1, 0, EYELID_OPEN_MS);
+  } finally {
+    overlay.style.visibility = 'hidden';
+    eyelidBusy = false;
+  }
+}
+
+const digits=[...document.querySelectorAll('.digit')];
+const hint=document.getElementById('hint');
+let transitioning=false;
+let messageReady = false;
+let nextPageStarted = false;
+function submitCode(){
+  if(transitioning)return;
+  const code=digits.map(x=>x.value).join('');
+  if(!/^[A-Z0-9]{6}$/.test(code))return;
+  // 게임 기록은 기존 V14/V15에서 사용한 localStorage 키와 연계됩니다.
+  // 별도 휴대폰에서 동일 코드를 조회하려면 향후 공용 DB 연결이 필요합니다.
+  try {
+    const records=JSON.parse(localStorage.getItem('presto_player_records_v1')||'{}');
+    const record=records[code]||null;
+    sessionStorage.setItem('presto_entered_access_code',code);
+    sessionStorage.setItem('presto_leaderboard_code', code);
+    if(record)sessionStorage.setItem('presto_entered_player_record',JSON.stringify(record));
+  }catch(e){/* 로컬 저장 제한 환경에서도 화면 전환은 진행 */}
+  transitioning=true;
+  digits.forEach(d=>d.blur());
+  (async () => {
+
+  // 첫 번째 눈 깜박임: 비밀번호 화면 → 문구 화면
+  await blinkTransition(() => {
+    document.getElementById('first').style.display = 'none';
+    document.getElementById('second').style.display = 'block';
+  });
+
+  // 이제 스크롤해야 다음 페이지로 갈 수 있음
+  messageReady = true;
+
+})();
+}
+digits.forEach((d,i)=>{
+  d.addEventListener('input', event => {
+    const val=d.value.toUpperCase().replace(/[^A-Z0-9]/g,'');
+    d.value=val.slice(-1);
+    if (event.isTrusted && event.inputType === 'insertText' && d.value) {
+      window.projectSounds?.play('accessKey');
+    }
+    hint.textContent='';
+    if(d.value&&i<5)digits[i+1].focus();
+    if(digits.every(x=>x.value))submitCode();
+  });
+  d.addEventListener('keydown',e=>{
+    if(e.key==='Backspace'&&!d.value&&i>0){digits[i-1].focus();digits[i-1].value=''}
+    if(e.key==='ArrowLeft'&&i>0)digits[i-1].focus();
+    if(e.key==='ArrowRight'&&i<5)digits[i+1].focus();
+    if(e.key==='Enter')submitCode();
+  });
+  d.addEventListener('paste',e=>{
+    const str=(e.clipboardData||window.clipboardData).getData('text').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);
+    if(!str)return;
+    e.preventDefault();
+    for(let j=0;j<6;j++)digits[j].value=str[j]||'';
+    if(str.length===6)submitCode();else digits[str.length].focus();
+  });
+
+  window.addEventListener(
+  'wheel',
+  e => {
+
+    // 아래로 스크롤만
+    if (e.deltaY <= 0) return;
+
+    // 문구 화면이 나온 뒤에만 작동
+    if (!messageReady || nextPageStarted) return;
+
+    nextPageStarted = true;
+
+    if (window.parent !== window) {
+
+      // index.html이 눈 깜박임 → 다음 페이지 전환 담당
+      window.parent.postMessage(
+        { type: 'NEXT_PAGE' },
+        '*'
+      );
+
+    } else {
+
+      // 01_presto.html만 따로 실행했을 때
+      window.location.href = '02_effort.html';
+    }
+
+  },
+  { passive: true }
+);
+
+});
+
+window.installProjectScrollHint(() => messageReady && !nextPageStarted);
+</script>
+</body>
+</html>

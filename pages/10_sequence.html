@@ -1,0 +1,1259 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+  <title>TRY HARDER</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+    }
+
+    #sequence {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+    }
+
+    #sequence svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .try-harder-line {
+      transform-box: fill-box;
+      transform-origin: center;
+      transform: scale(var(--row-scale, 1));
+      transition: transform 80ms ease-out;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .try-harder-line {
+        transition: none;
+      }
+    }
+
+
+/* 글리치 영상 전체 화면 */
+#glitchOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+
+  display: none;
+  align-items: center;
+  justify-content: center;
+
+  background: #000;
+}
+
+#glitchOverlay.active {
+  display: flex;
+}
+
+#glitchVideo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  z-index: 1;
+}
+
+#intro-screen {
+
+    
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+#intro-screen img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+
+
+
+/* 기존 03 페이지와 동일한 눈 깜박임 */
+#sequence-blink {
+  position: fixed;
+  inset: -2px;
+  width: calc(100% + 4px);
+  height: calc(100% + 4px);
+  z-index: 20001;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+#sequence-blink svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+
+/* 마지막 화면 위에 에러창 6개 */
+#errorWindows {
+  position: fixed;
+  inset: 0;
+  z-index: 10001;
+  pointer-events: none;
+}
+
+/* 각각의 에러창 */
+#errorWindows .error-window {
+  position: absolute;
+  height: auto;
+  max-width: none;
+  opacity: 0;
+
+  transform: translate(-50%, -50%) scale(0.97);
+
+  transition:
+    opacity 0.08s linear,
+    transform 0.08s ease-out;
+}
+
+/* 띡! 하고 나타남 */
+#errorWindows .error-window.visible {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+
+/* ================================
+   CRT 컴퓨터 종료 효과
+================================ */
+
+/* 화면이 접힐 때 뒤에 보이는 검은 화면 */
+body.crt-shutdown::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: #000;
+  z-index: 9998;
+  pointer-events: none;
+}
+
+/* 글리치 영상과 에러창 전체를 함께 접기 */
+#glitchOverlay.crt-shutting {
+  transform-origin: center center;
+  animation: crtPowerOff 0.85s ease-in forwards;
+}
+
+/* 화면이 세로로 찌그러진 뒤 가로로 사라짐 */
+@keyframes crtPowerOff {
+  0% {
+    transform: scale(1, 1);
+    filter: brightness(1);
+    opacity: 1;
+  }
+
+  20% {
+    transform: scale(1.01, 1);
+    filter: brightness(1.5);
+  }
+
+  55% {
+    transform: scale(1, 0.015);
+    filter: brightness(2.5);
+    opacity: 1;
+  }
+
+  75% {
+    transform: scale(0.85, 0.008);
+    filter: brightness(5);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(0, 0.008);
+    filter: brightness(8);
+    opacity: 0;
+  }
+}
+
+/* 가운데 남는 밝은 수평선 */
+body.crt-shutdown::after {
+  content: "";
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 3px;
+  z-index: 10003;
+
+  background: #f3f7ff;
+  box-shadow:
+    0 0 8px 2px rgba(255,255,255,0.8),
+    0 0 25px 4px rgba(200,220,255,0.5);
+
+  transform: translate(-50%, -50%) scaleX(1);
+  opacity: 0;
+  pointer-events: none;
+
+  animation: crtBeam 0.45s 0.43s ease-out forwards;
+}
+
+/* 밝은 선이 점으로 줄어들며 사라짐 */
+@keyframes crtBeam {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scaleX(1);
+  }
+
+  15% {
+    opacity: 1;
+  }
+
+  65% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scaleX(0.08);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scaleX(0);
+  }
+}
+
+
+/* ===================================
+   CRT LENS SHUTDOWN
+   볼록렌즈 형태로 수축하며 종료
+=================================== */
+
+/* 화면 자체가 타원형으로 오므라듦 */
+#glitchOverlay.crt-shutting {
+  transform: none !important;
+  transform-origin: center center;
+
+  animation: lensShutdown 0.55s
+    cubic-bezier(0.65, 0, 1, 1) forwards !important;
+
+  will-change: clip-path, filter;
+}
+
+@keyframes lensShutdown {
+
+  0% {
+    clip-path: ellipse(85% 95% at 50% 50%);
+    filter: brightness(1);
+    opacity: 1;
+  }
+
+  15% {
+    clip-path: ellipse(80% 85% at 50% 50%);
+    filter: brightness(1.3);
+  }
+
+  35% {
+    clip-path: ellipse(65% 40% at 50% 50%);
+    filter: brightness(1.5);
+  }
+
+  55% {
+    clip-path: ellipse(53% 12% at 50% 50%);
+    filter: brightness(2);
+  }
+
+  75% {
+    clip-path: ellipse(35% 1.5% at 50% 50%);
+    filter: brightness(3);
+  }
+
+  90% {
+    clip-path: ellipse(10% 0.4% at 50% 50%);
+    opacity: 1;
+  }
+
+  100% {
+    clip-path: ellipse(0% 0% at 50% 50%);
+    opacity: 0;
+  }
+}
+
+/* 종료 직전 중앙에 나타나는 빛 */
+body.crt-shutdown::after {
+  content: "";
+  position: fixed;
+
+  top: 50%;
+  left: 50%;
+
+  width: 65vw;
+  height: 10px;
+
+  border-radius: 50%;
+
+  background: radial-gradient(
+    ellipse at center,
+    #ffffff 0%,
+    #e5eeff 30%,
+    rgba(255,255,255,0.5) 60%,
+    transparent 85%
+  );
+
+  box-shadow:
+    0 0 12px rgba(255,255,255,0.8),
+    0 0 30px rgba(200,220,255,0.5);
+
+  z-index: 10003;
+  pointer-events: none;
+  opacity: 0;
+
+  transform:
+    translate(-50%, -50%)
+    scaleX(0);
+
+  animation: lensFlash 0.25s 0.30s
+    ease-out forwards !important;
+}
+
+/* 타원형 빛이 중앙의 점으로 수축 */
+@keyframes lensFlash {
+
+  0% {
+    opacity: 0;
+    transform:
+      translate(-50%, -50%)
+      scaleX(0.2) scaleY(1);
+  }
+
+  25% {
+    opacity: 1;
+    transform:
+      translate(-50%, -50%)
+      scaleX(1) scaleY(0.7);
+  }
+
+  65% {
+    opacity: 0.9;
+    transform:
+      translate(-50%, -50%)
+      scaleX(0.4) scaleY(0.4);
+  }
+
+  100% {
+    opacity: 0;
+    transform:
+      translate(-50%, -50%)
+      scaleX(0) scaleY(0);
+  }
+}
+
+
+/* ================================
+   CRT SHUTDOWN — LIGHT FLARE
+================================ */
+
+#poweroff-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 20000;
+
+  display: none;
+  overflow: hidden;
+
+  background: #000;
+  pointer-events: none;
+}
+
+#poweroff-screen.active {
+  display: block;
+}
+
+#poweroff-screen img {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  mix-blend-mode: screen;
+}
+
+#poweroff-screen.active img {
+  animation: finalLight 0.42s
+    ease-out forwards;
+}
+
+@keyframes finalLight {
+
+  0% {
+    opacity: 0;
+    transform:
+      translate(-50%, -50%)
+      scaleX(1.1) scaleY(1.25);
+  }
+
+  15% {
+    opacity: 1;
+    transform:
+      translate(-50%, -50%)
+      scaleX(1) scaleY(1);
+  }
+
+  45% {
+    opacity: 0.95;
+    transform:
+      translate(-50%, -50%)
+      scaleX(0.75) scaleY(0.8);
+  }
+
+  75% {
+    opacity: 0.7;
+    transform:
+      translate(-50%, -50%)
+      scaleX(0.3) scaleY(0.4);
+  }
+
+  100% {
+    opacity: 0;
+    transform:
+      translate(-50%, -50%)
+      scaleX(0.02) scaleY(0.02);
+  }
+}
+
+
+
+  </style>
+<style>
+  #projectScrollHint {
+    --project-scroll-hint-color: #000fff;
+    z-index: 10001;
+  }
+</style>
+<script src="../assets/project-sounds.js"></script>
+<script src="../assets/project-scroll-hint.js"></script>
+</head>
+
+<body>
+
+  <main id="sequence"></main>
+
+  <!-- TRY HARDER 시작 전 화면 -->
+<div id="intro-screen">
+  <img id="intro-art" src="../assets/28.svg" alt="But, couldn’t I just try harder?" hidden>
+</div>
+
+
+<!-- 눈 깜박임 효과 -->
+<div id="sequence-blink" aria-hidden="true">
+  <svg viewBox="0 0 1000 600"
+       preserveAspectRatio="none">
+
+    <defs>
+      <filter id="sequenceEdgeBlur"
+              x="-15%" y="-30%"
+              width="130%" height="160%">
+        <feGaussianBlur stdDeviation="17"/>
+      </filter>
+    </defs>
+
+    <rect id="sequenceTopCover"
+          x="-60" y="-60"
+          width="1120" height="60"
+          fill="black"/>
+
+    <rect id="sequenceBottomCover"
+          x="-60" y="600"
+          width="1120" height="60"
+          fill="black"/>
+
+    <path id="sequenceLidTop"
+          fill="black"
+          filter="url(#sequenceEdgeBlur)"/>
+
+    <path id="sequenceLidBottom"
+          fill="black"
+          filter="url(#sequenceEdgeBlur)"/>
+
+  </svg>
+</div>
+
+
+<!-- 9번째 반복에서 등장하는 글리치 영상 -->
+<div id="glitchOverlay">
+  <video
+    id="glitchVideo"
+    src="../assets/glitch.mp4"
+    preload="auto"
+    muted
+    playsinline
+  ></video>
+
+
+<!-- 글리치 영상 마지막 화면 위 에러창 6개 -->
+<div id="errorWindows" aria-hidden="true"></div>
+
+</div>
+
+<!-- 컴퓨터 종료 시 중앙에 나타나는 빛 -->
+<div id="poweroff-screen">
+  <img src="../assets/shutdown-flare.png" alt="">
+</div>
+
+  <script>
+
+    // ==========================================
+    // 1. 설정
+    // ==========================================
+
+    const SVG_PATH = "../assets/25-11.svg";
+
+    // 원본 SVG의 글씨 줄 간격
+    const ROW_STEP = 217.62;
+
+    // 마지막에 추가할 글씨 줄 수
+    const REPEAT_COUNT = 15;
+
+    // 마지막 반복 간격: 0.1초
+    const FAST_INTERVAL = 100;
+
+    // 마지막 글씨가 흘러가는 속도
+    const MOVE_DURATION = 85;
+
+    const NS = "http://www.w3.org/2000/svg";
+
+    const wait = ms =>
+      new Promise(resolve => setTimeout(resolve, ms));
+
+    
+/* ======================================
+   28.svg에서 아래로 스크롤해야 다음 화면
+====================================== */
+
+const introArt = document.getElementById("intro-art");
+const introArtReady = introArt.decode().catch(() => {});
+const introSceneVisible = new Promise(resolve => {
+  if (window.parent === window) {
+    resolve();
+    return;
+  }
+
+  function onSceneVisible(event) {
+    if (event.source !== window.parent || event.origin !== window.location.origin ||
+        event.data?.type !== "SEQUENCE_SCENE_VISIBLE") return;
+    window.removeEventListener("message", onSceneVisible);
+    resolve();
+  }
+
+  window.addEventListener("message", onSceneVisible);
+});
+const introRevealDelay = introSceneVisible.then(() => wait(2500));
+
+let waitingForSequenceScroll = false;
+let showGlitchScrollHint = false;
+window.installProjectScrollHint(
+  () => waitingForSequenceScroll || showGlitchScrollHint,
+  { dark: true }
+);
+
+function waitForIntroSwipe() {
+  waitingForSequenceScroll = true;
+  return new Promise(resolve => {
+
+    let touchStartY = 0;
+    let triggered = false;
+
+    function startTransition() {
+      if (triggered) return;
+      triggered = true;
+      waitingForSequenceScroll = false;
+
+      // 전환이 시작되면 이벤트 제거
+      window.removeEventListener("wheel", onWheel);
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchend", onTouchEnd);
+      window.removeEventListener("keydown", onKeyDown);
+
+      resolve();
+    }
+
+    // 마우스 휠 / 트랙패드
+    function onWheel(e) {
+      if (e.deltaY > 10) {
+        e.preventDefault();
+        startTransition();
+      }
+    }
+
+    // 모바일 터치 시작
+    function onTouchStart(e) {
+      touchStartY = e.touches[0].clientY;
+    }
+
+    // 손가락을 위로 밀면 다음 화면
+    function onTouchEnd(e) {
+      const touchEndY = e.changedTouches[0].clientY;
+
+      if (touchStartY - touchEndY > 40) {
+        startTransition();
+      }
+    }
+
+    // 키보드로도 이동 가능
+    function onKeyDown(e) {
+      if (
+        e.key === "ArrowDown" ||
+        e.key === "PageDown" ||
+        e.key === " "
+      ) {
+        e.preventDefault();
+        startTransition();
+      }
+    }
+
+    window.addEventListener("wheel", onWheel, {
+      passive: false
+    });
+
+    window.addEventListener("touchstart", onTouchStart, {
+      passive: true
+    });
+
+    window.addEventListener("touchend", onTouchEnd, {
+      passive: true
+    });
+
+    window.addEventListener("keydown", onKeyDown);
+  });
+}
+
+
+    
+/* 28.svg → TRY HARDER 눈 깜박임 */
+
+const sequenceBlink =
+  document.getElementById("sequence-blink");
+
+const sequenceLidTop =
+  document.getElementById("sequenceLidTop");
+
+const sequenceLidBottom =
+  document.getElementById("sequenceLidBottom");
+
+const sequenceTopCover =
+  document.getElementById("sequenceTopCover");
+
+const sequenceBottomCover =
+  document.getElementById("sequenceBottomCover");
+
+function drawSequenceEye(p) {
+  p = Math.max(0, Math.min(1, p));
+
+  const edge = 300 * p;
+  const curve = 190 * Math.sin(Math.PI * p);
+  const bottom = 600 - edge;
+  const fade = Math.min(1, p / 0.12);
+
+  sequenceLidTop.setAttribute(
+    "d",
+    `M-100 -100 H1100 V${edge} Q500 ${edge + curve} -100 ${edge} Z`
+  );
+
+  sequenceLidBottom.setAttribute(
+    "d",
+    `M-100 700 H1100 V${bottom} Q500 ${bottom - curve} -100 ${bottom} Z`
+  );
+
+  [
+    sequenceLidTop,
+    sequenceLidBottom,
+    sequenceTopCover,
+    sequenceBottomCover
+  ].forEach(el => {
+    el.style.opacity = fade;
+  });
+
+  sequenceTopCover.setAttribute(
+    "height",
+    String(60 + Math.max(0, edge - 60))
+  );
+
+  sequenceBottomCover.setAttribute(
+    "y",
+    String(Math.min(600, bottom + 60))
+  );
+
+  sequenceBottomCover.setAttribute(
+    "height",
+    String(660 - Math.min(600, bottom + 60))
+  );
+
+  // 완전히 감겼을 때 화면 전체를 검정으로
+  sequenceBlink.style.backgroundColor =
+    p >= 0.999 ? "#000" : "transparent";
+}
+
+function tweenSequenceEye(from, to, duration) {
+  if (from === 0 && to === 1) window.projectSounds?.play('blink');
+  return new Promise(resolve => {
+    const start = performance.now();
+
+    function tick(now) {
+      const t = Math.min(
+        1,
+        (now - start) / duration
+      );
+
+      const eased = t * t * (3 - 2 * t);
+
+      drawSequenceEye(
+        from + (to - from) * eased
+      );
+
+      if (t < 1) {
+        requestAnimationFrame(tick);
+      } else {
+        resolve();
+      }
+    }
+
+    requestAnimationFrame(tick);
+  });
+}
+
+const BLINK_CLOSE_MS = 550;
+const BLINK_HOLD_MS = 150;
+const BLINK_OPEN_MS = 550;
+
+async function blinkTo(changeScene) {
+  sequenceBlink.style.visibility = "visible";
+  drawSequenceEye(0);
+
+  await tweenSequenceEye(0, 1, BLINK_CLOSE_MS);
+
+  await wait(BLINK_HOLD_MS);
+
+  // Reveal the next scene and start its cue as the eye opens.
+  changeScene();
+  await tweenSequenceEye(1, 0, BLINK_OPEN_MS);
+
+  sequenceBlink.style.visibility = "hidden";
+  sequenceBlink.style.backgroundColor = "transparent";
+}
+
+
+
+// ========================================
+// 에러창 설정 — 여기서 6개 모두 수정!
+// ========================================
+
+// 에러창이 나타나는 간격 (밀리초)
+const ERROR_GAP = 800;
+
+// x = 좌우 위치 (%)
+// y = 상하 위치 (%)
+// width = 이미지 크기 (vw)
+
+const ERROR_WINDOWS = [
+  { src: "../assets/27.svg", x: 24, y: 20, width: 66 },
+  { src: "../assets/27.svg", x: 73, y: 28, width: 66 },
+  { src: "../assets/27.svg", x: 33, y: 46, width: 66 },
+  { src: "../assets/27.svg", x: 77, y: 55, width: 66 },
+  { src: "../assets/27.svg", x: 22, y: 60, width: 66 },
+  { src: "../assets/27.svg", x: 58, y: 78, width: 66 }
+];
+
+
+// 에러창 6개 미리 생성
+const errorWindowElements = ERROR_WINDOWS.map((item, index) => {
+
+  const image = document.createElement("img");
+
+  image.src = item.src;
+  image.alt = `Error window ${index + 1}`;
+  image.className = "error-window";
+
+  image.style.left = item.x + "%";
+  image.style.top = item.y + "%";
+  image.style.width = item.width + "vw";
+
+  document.getElementById("errorWindows")
+    .appendChild(image);
+
+  return image;
+});
+
+
+// 에러창을 0.8초 간격으로 하나씩 표시
+async function showErrorWindows() {
+
+  for (let i = 0; i < errorWindowElements.length; i++) {
+
+    if (i > 0) {
+      await wait(ERROR_GAP);
+    }
+
+    errorWindowElements[i].classList.add("visible");
+  }
+}
+
+
+/* ================================
+   컴퓨터 종료 애니메이션 실행
+================================ */
+
+
+
+
+async function playGlitchVideo() {
+  const overlay = document.getElementById("glitchOverlay");
+  const video = document.getElementById("glitchVideo");
+  const interactions = new AbortController();
+  const { signal } = interactions;
+  const hideScrollHint = () => { showGlitchScrollHint = false; };
+
+  overlay.classList.add("active");
+  video.currentTime = 0;
+  showGlitchScrollHint = true;
+
+  window.addEventListener("wheel", event => {
+    if (event.deltaY !== 0) hideScrollHint();
+  }, { passive: true, signal });
+  window.addEventListener("touchmove", hideScrollHint, { passive: true, signal });
+  window.addEventListener("keydown", event => {
+    if (["ArrowDown", "ArrowUp", "PageDown", "PageUp", " "].includes(event.key)) {
+      hideScrollHint();
+    }
+  }, { signal });
+
+  const finished = await new Promise(resolve => {
+    video.addEventListener("timeupdate", () => {
+      if (Number.isFinite(video.duration) &&
+          video.duration - video.currentTime <= 0.25) {
+        resolve(true);
+      }
+    }, { signal });
+    video.addEventListener("ended", () => resolve(true), { once: true, signal });
+    video.addEventListener("error", () => resolve(false), { once: true, signal });
+    video.play().catch(error => {
+      console.error("Video playback failed:", error);
+      resolve(false);
+    });
+  });
+
+  interactions.abort();
+  hideScrollHint();
+
+  if (!finished) {
+    overlay.classList.remove("active");
+    return;
+  }
+
+  const shutdown = new Promise(resolve => {
+    overlay.addEventListener("animationend", resolve, { once: true });
+  });
+  document.body.classList.add("crt-shutdown");
+  overlay.classList.add("crt-shutting");
+  await Promise.race([shutdown, wait(650)]);
+  video.pause();
+}
+
+
+
+
+
+    // ==========================================
+    // 2. SVG 불러오기
+    // ==========================================
+
+    async function startSequence() {
+
+      let source;
+      if (location.protocol === "file:") {
+        source = document.getElementById("sequence-local-svg").textContent.trim();
+      } else {
+        const response = await fetch(SVG_PATH);
+        if (!response.ok) throw new Error("SVG loading failed: " + SVG_PATH);
+        source = await response.text();
+      }
+
+      const doc = new DOMParser().parseFromString(
+        source,
+        "image/svg+xml"
+      );
+
+      const svg = doc.documentElement;
+
+      const originalGroup = Array
+        .from(svg.children)
+        .find(el => el.localName === "g");
+
+      if (!originalGroup) {
+        throw new Error("SVG 글자 그룹을 찾지 못했습니다.");
+      }
+
+      const paths = Array
+        .from(originalGroup.children)
+        .filter(el => el.localName === "path");
+
+      // 25-11 원본: 6줄 × 줄당 9개 글자 경로
+      if (paths.length !== 54) {
+        throw new Error(
+          "25-11.svg의 글자 구조가 변경되었습니다."
+        );
+      }
+
+
+      // ==========================================
+      // 3. 글씨를 줄 단위로 분리
+      // ==========================================
+
+      svg.removeChild(originalGroup);
+
+      svg.setAttribute(
+        "preserveAspectRatio",
+        "xMidYMid meet"
+      );
+
+      const track = document.createElementNS(
+        NS, "g"
+      );
+
+      svg.appendChild(track);
+
+      const rows = [];
+
+      const totalRows = 6 + REPEAT_COUNT;
+
+      for (let i = 0; i < totalRows; i++) {
+
+        const sourceRow = Math.min(i, 5);
+
+        const row = document.createElementNS(
+          NS, "g"
+        );
+
+        // 처음에는 보이지 않음
+        row.style.visibility = "hidden";
+
+        // 원본 SVG의 벡터 글자 9개 사용
+        const start = sourceRow * 9;
+
+        const rowPaths = paths.slice(
+          start,
+          start + 9
+        );
+
+        const line = document.createElementNS(NS, "g");
+        line.setAttribute("class", "try-harder-line");
+        rowPaths.forEach(path => {
+          line.appendChild(path.cloneNode(true));
+        });
+        row.appendChild(line);
+
+        // 11번 이후에도 동일한 글씨를
+        // 아래쪽으로 계속 연결
+        if (i >= 6) {
+
+          const extraY =
+            (i - 5) * ROW_STEP;
+
+          row.setAttribute(
+            "transform",
+            `translate(0, ${extraY})`
+          );
+
+        }
+
+        track.appendChild(row);
+        rows.push(row);
+
+      }
+
+      document.getElementById(
+        "sequence"
+      ).appendChild(svg);
+
+
+      // ==========================================
+      // 4. 처음 위치
+      // ==========================================
+
+      let currentY = ROW_STEP * 2;
+
+      track.setAttribute(
+        "transform",
+        `translate(0, ${currentY})`
+      );
+
+      function showRow(index) {
+        // Grow all lines together while keeping enough space between rows.
+        const scale = 1 + 0.65 * (1 - 0.83 ** index);
+        track.style.setProperty("--row-scale", scale);
+        rows[index].style.visibility = "visible";
+        if (index < 4) window.projectSounds?.play("tryHarderRow");
+      }
+
+      await Promise.all([introArtReady, introRevealDelay]);
+      introArt.hidden = false;
+      window.projectSounds?.play("tryHarderImpact");
+      await waitForIntroSwipe();
+
+      await blinkTo(() => {
+        document.getElementById("intro-screen").remove();
+        showRow(0);
+      });
+
+
+      // ==========================================
+      // 6. 전체 글씨가 부드럽게 이동
+      // ==========================================
+
+      function moveTo(targetY, duration) {
+
+        const startY = currentY;
+        const startTime = performance.now();
+
+        function animate(now) {
+
+          const t = Math.min(
+            (now - startTime) / duration,
+            1
+          );
+
+          // 부드러운 감속
+          const ease = t * (2 - t);
+
+          currentY =
+            startY +
+            (targetY - startY) * ease;
+
+          track.setAttribute(
+            "transform",
+            `translate(0, ${currentY})`
+          );
+
+          if (t < 1) {
+            requestAnimationFrame(animate);
+          }
+
+        }
+
+        requestAnimationFrame(animate);
+
+      }
+
+
+      // ==========================================
+      // 7. 처음에는 천천히 등장
+      // ==========================================
+
+      // 25-05 → 25-06 : 1초
+      await wait(1000);
+
+      showRow(1);
+
+      // 새 줄을 보여주면서 기존 줄을
+      // 부드럽게 위로 밀어 올리기
+      moveTo(ROW_STEP, 240);
+
+
+      // 25-06 → 25-07 : 0.5초
+      await wait(500);
+
+      showRow(2);
+
+
+      // 25-07 → 25-08 : 0.3초
+      // 두 SVG의 글자 배열이 같아서
+      // 여기서는 잠시 유지
+      await wait(300);
+
+
+      // ==========================================
+      // 8. 이후 빠르게 쏟아짐
+      // ==========================================
+
+      // 25-08 → 25-09 : 0.1초
+      await wait(100);
+
+      showRow(3);
+
+
+      // 25-09 → 25-10 : 0.1초
+      await wait(100);
+
+      showRow(4);
+
+      // 화면이 차면 위로 부드럽게 이동
+      moveTo(0, MOVE_DURATION);
+
+
+      // 25-10 → 25-11 : 0.1초
+      await wait(100);
+
+      showRow(5);
+
+
+      // ==========================================
+      // 9. 마지막 6줄이 주르륵 이어짐
+      // ==========================================
+
+      
+for (
+  let i = 6;
+  i < totalRows;
+  i++
+) {
+
+  // 기존 0.1초 반복
+  await wait(FAST_INTERVAL);
+
+  // TRY HARDER 등장
+  showRow(i);
+
+  // 기존 글씨 위로 밀어 올리기
+  const targetY =
+    -ROW_STEP * (i - 5);
+
+  moveTo(
+    targetY,
+    MOVE_DURATION
+  );
+
+  // 전체 9번째 TRY HARDER가 등장한 직후
+  
+if (i === 13) {
+
+  // 기존 글리치 영상 + 컴퓨터 종료 효과
+  await wait(MOVE_DURATION);
+  await playGlitchVideo();
+
+  if (window.parent !== window) {
+    window.parent.postMessage({ type: "NEXT_PAGE" }, "*");
+  } else {
+    drawSequenceEye(0);
+    sequenceBlink.style.visibility = "visible";
+    await tweenSequenceEye(0, 1, BLINK_CLOSE_MS);
+    await wait(BLINK_HOLD_MS + 1000);
+    window.location.href = "11_stack.html?blink=sequence";
+  }
+
+  return;
+}
+
+}
+
+
+      // 마지막 이동까지 완료
+      await wait(MOVE_DURATION);
+
+      // 화면을 그대로 유지
+
+    }
+
+
+    // ==========================================
+    // 10. 자동 실행
+    // ==========================================
+
+    startSequence().catch(error => {
+      console.error(error);
+    });
+
+  </script>
+
+<script type="text/plain" id="sequence-local-svg">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="_레이어_1" data-name="레이어 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #fff;
+      }
+    </style>
+  </defs>
+  <rect x="-5.84" width="1913.67" height="1080"/>
+  <rect x="-5.84" width="2015.27" height="1080"/>
+  <g>
+    <path class="cls-1" d="M571.52-71.32v25.03h-32.64V53.81h-30.1V-46.29h-32.64v-25.03h95.39Z"/>
+    <path class="cls-1" d="M650.76,53.81l-20.85-47.33h-15.6v47.33h-30.1v-125.13h47.15c28.83,0,47.33,13.24,47.33,39.35,0,16.32-7.25,27.38-19.95,33.19l25.03,52.59h-33.01ZM627.73-18.55c12.15,0,20.86-1.63,20.86-13.42s-8.71-14.33-20.86-14.33h-13.42v27.75h13.42Z"/>
+    <path class="cls-1" d="M714.6-71.32l19.4,42.98,19.4-42.98h34.64L749.05,3.76v50.05h-30.1V3.76l-38.99-75.08h34.64Z"/>
+    <path class="cls-1" d="M874.36-23.45h38.45v-47.88h30.1V53.81h-30.1V1.58h-38.45v52.23h-30.1v-125.13h30.1V-23.45Z"/>
+    <path class="cls-1" d="M951.97,53.81l43.52-125.13h29.02l43.52,125.13h-32.1l-6.71-21.4h-38.63l-6.53,21.4h-32.1ZM998.4,7.38h23.03l-11.42-37-11.61,37Z"/>
+    <path class="cls-1" d="M1143.66,53.81l-20.86-47.33h-15.6v47.33h-30.1v-125.13h47.15c28.83,0,47.33,13.24,47.33,39.35,0,16.32-7.25,27.38-19.95,33.19l25.03,52.59h-33.01ZM1120.63-18.55c12.15,0,20.86-1.63,20.86-13.42s-8.71-14.33-20.86-14.33h-13.42v27.75h13.42Z"/>
+    <path class="cls-1" d="M1190.26,53.81v-125.13h46.61c28.47,0,49.33,13.96,49.33,53.5V.31c0,39.17-20.86,53.5-49.33,53.5h-46.61ZM1256.09.31v-18.13c0-16.87-3.63-28.47-19.22-28.47h-16.5V28.78h16.5c15.6,0,19.22-11.61,19.22-28.47Z"/>
+    <path class="cls-1" d="M1384.3-71.32v25.03h-48.96v22.85h43.52V1.58h-43.52v27.2h48.96v25.03h-79.07v-125.13h79.07Z"/>
+    <path class="cls-1" d="M1466.27,53.81l-20.86-47.33h-15.6v47.33h-30.1v-125.13h47.15c28.83,0,47.33,13.24,47.33,39.35,0,16.32-7.25,27.38-19.95,33.19l25.03,52.59h-33.01ZM1443.23-18.55c12.15,0,20.86-1.63,20.86-13.42s-8.71-14.33-20.86-14.33h-13.42v27.75h13.42Z"/>
+    <path class="cls-1" d="M571.52,146.29v25.03h-32.64v100.11h-30.1v-100.11h-32.64v-25.03h95.39Z"/>
+    <path class="cls-1" d="M650.76,271.43l-20.85-47.33h-15.6v47.33h-30.1v-125.13h47.15c28.83,0,47.33,13.24,47.33,39.35,0,16.32-7.25,27.38-19.95,33.19l25.03,52.59h-33.01ZM627.73,199.07c12.15,0,20.86-1.63,20.86-13.42s-8.71-14.33-20.86-14.33h-13.42v27.75h13.42Z"/>
+    <path class="cls-1" d="M714.6,146.29l19.4,42.98,19.4-42.98h34.64l-38.99,75.08v50.05h-30.1v-50.05l-38.99-75.08h34.64Z"/>
+    <path class="cls-1" d="M874.36,194.17h38.45v-47.88h30.1v125.13h-30.1v-52.23h-38.45v52.23h-30.1v-125.13h30.1v47.88Z"/>
+    <path class="cls-1" d="M951.97,271.43l43.52-125.13h29.02l43.52,125.13h-32.1l-6.71-21.4h-38.63l-6.53,21.4h-32.1ZM998.4,225h23.03l-11.42-37-11.61,37Z"/>
+    <path class="cls-1" d="M1143.66,271.43l-20.86-47.33h-15.6v47.33h-30.1v-125.13h47.15c28.83,0,47.33,13.24,47.33,39.35,0,16.32-7.25,27.38-19.95,33.19l25.03,52.59h-33.01ZM1120.63,199.07c12.15,0,20.86-1.63,20.86-13.42s-8.71-14.33-20.86-14.33h-13.42v27.75h13.42Z"/>
+    <path class="cls-1" d="M1190.26,271.43v-125.13h46.61c28.47,0,49.33,13.96,49.33,53.5v18.14c0,39.17-20.86,53.5-49.33,53.5h-46.61ZM1256.09,217.93v-18.14c0-16.87-3.63-28.47-19.22-28.47h-16.5v75.08h16.5c15.6,0,19.22-11.61,19.22-28.47Z"/>
+    <path class="cls-1" d="M1384.3,146.29v25.03h-48.96v22.85h43.52v25.03h-43.52v27.2h48.96v25.03h-79.07v-125.13h79.07Z"/>
+    <path class="cls-1" d="M1466.27,271.43l-20.86-47.33h-15.6v47.33h-30.1v-125.13h47.15c28.83,0,47.33,13.24,47.33,39.35,0,16.32-7.25,27.38-19.95,33.19l25.03,52.59h-33.01ZM1443.23,199.07c12.15,0,20.86-1.63,20.86-13.42s-8.71-14.33-20.86-14.33h-13.42v27.75h13.42Z"/>
+    <path class="cls-1" d="M571.52,363.91v25.03h-32.64v100.11h-30.1v-100.11h-32.64v-25.03h95.39Z"/>
+    <path class="cls-1" d="M650.76,489.04l-20.85-47.33h-15.6v47.33h-30.1v-125.13h47.15c28.83,0,47.33,13.24,47.33,39.35,0,16.32-7.25,27.38-19.95,33.19l25.03,52.59h-33.01ZM627.73,416.68c12.15,0,20.86-1.63,20.86-13.42s-8.71-14.33-20.86-14.33h-13.42v27.75h13.42Z"/>
+    <path class="cls-1" d="M714.6,363.91l19.4,42.98,19.4-42.98h34.64l-38.99,75.08v50.05h-30.1v-50.05l-38.99-75.08h34.64Z"/>
+    <path class="cls-1" d="M874.36,411.78h38.45v-47.88h30.1v125.13h-30.1v-52.23h-38.45v52.23h-30.1v-125.13h30.1v47.88Z"/>
+    <path class="cls-1" d="M951.97,489.04l43.52-125.13h29.02l43.52,125.13h-32.1l-6.71-21.4h-38.63l-6.53,21.4h-32.1ZM998.4,442.61h23.03l-11.42-37-11.61,37Z"/>
+    <path class="cls-1" d="M1143.66,489.04l-20.86-47.33h-15.6v47.33h-30.1v-125.13h47.15c28.83,0,47.33,13.24,47.33,39.35,0,16.32-7.25,27.38-19.95,33.19l25.03,52.59h-33.01ZM1120.63,416.68c12.15,0,20.86-1.63,20.86-13.42s-8.71-14.33-20.86-14.33h-13.42v27.75h13.42Z"/>
+    <path class="cls-1" d="M1190.26,489.04v-125.13h46.61c28.47,0,49.33,13.96,49.33,53.5v18.14c0,39.17-20.86,53.5-49.33,53.5h-46.61ZM1256.09,435.54v-18.14c0-16.87-3.63-28.47-19.22-28.47h-16.5v75.08h16.5c15.6,0,19.22-11.61,19.22-28.47Z"/>
+    <path class="cls-1" d="M1384.3,363.91v25.03h-48.96v22.85h43.52v25.03h-43.52v27.2h48.96v25.03h-79.07v-125.13h79.07Z"/>
+    <path class="cls-1" d="M1466.27,489.04l-20.86-47.33h-15.6v47.33h-30.1v-125.13h47.15c28.83,0,47.33,13.24,47.33,39.35,0,16.32-7.25,27.38-19.95,33.19l25.03,52.59h-33.01ZM1443.23,416.68c12.15,0,20.86-1.63,20.86-13.42s-8.71-14.33-20.86-14.33h-13.42v27.75h13.42Z"/>
+    <path class="cls-1" d="M571.52,581.52v25.03h-32.64v100.11h-30.1v-100.11h-32.64v-25.03h95.39Z"/>
+    <path class="cls-1" d="M650.76,706.66l-20.85-47.33h-15.6v47.33h-30.1v-125.13h47.15c28.83,0,47.33,13.24,47.33,39.35,0,16.32-7.25,27.38-19.95,33.19l25.03,52.59h-33.01ZM627.73,634.3c12.15,0,20.86-1.63,20.86-13.42s-8.71-14.33-20.86-14.33h-13.42v27.75h13.42Z"/>
+    <path class="cls-1" d="M714.6,581.52l19.4,42.98,19.4-42.98h34.64l-38.99,75.08v50.05h-30.1v-50.05l-38.99-75.08h34.64Z"/>
+    <path class="cls-1" d="M874.36,629.4h38.45v-47.88h30.1v125.13h-30.1v-52.23h-38.45v52.23h-30.1v-125.13h30.1v47.88Z"/>
+    <path class="cls-1" d="M951.97,706.66l43.52-125.13h29.02l43.52,125.13h-32.1l-6.71-21.4h-38.63l-6.53,21.4h-32.1ZM998.4,660.23h23.03l-11.42-37-11.61,37Z"/>
+    <path class="cls-1" d="M1143.66,706.66l-20.86-47.33h-15.6v47.33h-30.1v-125.13h47.15c28.83,0,47.33,13.24,47.33,39.35,0,16.32-7.25,27.38-19.95,33.19l25.03,52.59h-33.01ZM1120.63,634.3c12.15,0,20.86-1.63,20.86-13.42s-8.71-14.33-20.86-14.33h-13.42v27.75h13.42Z"/>
+    <path class="cls-1" d="M1190.26,706.66v-125.13h46.61c28.47,0,49.33,13.96,49.33,53.5v18.14c0,39.17-20.86,53.5-49.33,53.5h-46.61ZM1256.09,653.16v-18.14c0-16.87-3.63-28.47-19.22-28.47h-16.5v75.08h16.5c15.6,0,19.22-11.61,19.22-28.47Z"/>
+    <path class="cls-1" d="M1384.3,581.52v25.03h-48.96v22.85h43.52v25.03h-43.52v27.2h48.96v25.03h-79.07v-125.13h79.07Z"/>
+    <path class="cls-1" d="M1466.27,706.66l-20.86-47.33h-15.6v47.33h-30.1v-125.13h47.15c28.83,0,47.33,13.24,47.33,39.35,0,16.32-7.25,27.38-19.95,33.19l25.03,52.59h-33.01ZM1443.23,634.3c12.15,0,20.86-1.63,20.86-13.42s-8.71-14.33-20.86-14.33h-13.42v27.75h13.42Z"/>
+    <path class="cls-1" d="M571.52,799.14v25.03h-32.64v100.11h-30.1v-100.11h-32.64v-25.03h95.39Z"/>
+    <path class="cls-1" d="M650.76,924.27l-20.85-47.33h-15.6v47.33h-30.1v-125.13h47.15c28.83,0,47.33,13.24,47.33,39.35,0,16.32-7.25,27.38-19.95,33.19l25.03,52.59h-33.01ZM627.73,851.91c12.15,0,20.86-1.63,20.86-13.42s-8.71-14.33-20.86-14.33h-13.42v27.75h13.42Z"/>
+    <path class="cls-1" d="M714.6,799.14l19.4,42.98,19.4-42.98h34.64l-38.99,75.08v50.05h-30.1v-50.05l-38.99-75.08h34.64Z"/>
+    <path class="cls-1" d="M874.36,847.01h38.45v-47.88h30.1v125.13h-30.1v-52.23h-38.45v52.23h-30.1v-125.13h30.1v47.88Z"/>
+    <path class="cls-1" d="M951.97,924.27l43.52-125.13h29.02l43.52,125.13h-32.1l-6.71-21.4h-38.63l-6.53,21.4h-32.1ZM998.4,877.84h23.03l-11.42-37-11.61,37Z"/>
+    <path class="cls-1" d="M1143.66,924.27l-20.86-47.33h-15.6v47.33h-30.1v-125.13h47.15c28.83,0,47.33,13.24,47.33,39.35,0,16.32-7.25,27.38-19.95,33.19l25.03,52.59h-33.01ZM1120.63,851.91c12.15,0,20.86-1.63,20.86-13.42s-8.71-14.33-20.86-14.33h-13.42v27.75h13.42Z"/>
+    <path class="cls-1" d="M1190.26,924.27v-125.13h46.61c28.47,0,49.33,13.96,49.33,53.5v18.14c0,39.17-20.86,53.5-49.33,53.5h-46.61ZM1256.09,870.77v-18.14c0-16.87-3.63-28.47-19.22-28.47h-16.5v75.08h16.5c15.6,0,19.22-11.61,19.22-28.47Z"/>
+    <path class="cls-1" d="M1384.3,799.14v25.03h-48.96v22.85h43.52v25.03h-43.52v27.2h48.96v25.03h-79.07v-125.13h79.07Z"/>
+    <path class="cls-1" d="M1466.27,924.27l-20.86-47.33h-15.6v47.33h-30.1v-125.13h47.15c28.83,0,47.33,13.24,47.33,39.35,0,16.32-7.25,27.38-19.95,33.19l25.03,52.59h-33.01ZM1443.23,851.91c12.15,0,20.86-1.63,20.86-13.42s-8.71-14.33-20.86-14.33h-13.42v27.75h13.42Z"/>
+    <path class="cls-1" d="M571.52,1016.75v25.03h-32.64v100.11h-30.1v-100.11h-32.64v-25.03h95.39Z"/>
+    <path class="cls-1" d="M650.76,1141.88l-20.85-47.33h-15.6v47.33h-30.1v-125.13h47.15c28.83,0,47.33,13.24,47.33,39.35,0,16.32-7.25,27.38-19.95,33.19l25.03,52.59h-33.01ZM627.73,1069.53c12.15,0,20.86-1.63,20.86-13.42s-8.71-14.33-20.86-14.33h-13.42v27.75h13.42Z"/>
+    <path class="cls-1" d="M714.6,1016.75l19.4,42.98,19.4-42.98h34.64l-38.99,75.08v50.05h-30.1v-50.05l-38.99-75.08h34.64Z"/>
+    <path class="cls-1" d="M874.36,1064.63h38.45v-47.88h30.1v125.13h-30.1v-52.23h-38.45v52.23h-30.1v-125.13h30.1v47.88Z"/>
+    <path class="cls-1" d="M951.97,1141.88l43.52-125.13h29.02l43.52,125.13h-32.1l-6.71-21.4h-38.63l-6.53,21.4h-32.1ZM998.4,1095.46h23.03l-11.42-37-11.61,37Z"/>
+    <path class="cls-1" d="M1143.66,1141.88l-20.86-47.33h-15.6v47.33h-30.1v-125.13h47.15c28.83,0,47.33,13.24,47.33,39.35,0,16.32-7.25,27.38-19.95,33.19l25.03,52.59h-33.01ZM1120.63,1069.53c12.15,0,20.86-1.63,20.86-13.42s-8.71-14.33-20.86-14.33h-13.42v27.75h13.42Z"/>
+    <path class="cls-1" d="M1190.26,1141.88v-125.13h46.61c28.47,0,49.33,13.96,49.33,53.5v18.14c0,39.17-20.86,53.5-49.33,53.5h-46.61ZM1256.09,1088.39v-18.14c0-16.87-3.63-28.47-19.22-28.47h-16.5v75.08h16.5c15.6,0,19.22-11.61,19.22-28.47Z"/>
+    <path class="cls-1" d="M1384.3,1016.75v25.03h-48.96v22.85h43.52v25.03h-43.52v27.2h48.96v25.03h-79.07v-125.13h79.07Z"/>
+    <path class="cls-1" d="M1466.27,1141.88l-20.86-47.33h-15.6v47.33h-30.1v-125.13h47.15c28.83,0,47.33,13.24,47.33,39.35,0,16.32-7.25,27.38-19.95,33.19l25.03,52.59h-33.01ZM1443.23,1069.53c12.15,0,20.86-1.63,20.86-13.42s-8.71-14.33-20.86-14.33h-13.42v27.75h13.42Z"/>
+  </g>
+</svg>
+</script>
+</body>
+</html>

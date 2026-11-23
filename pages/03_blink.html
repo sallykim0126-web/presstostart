@@ -1,0 +1,315 @@
+
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+<title>EFFORT — Page 03</title>
+
+<style>
+  * {
+    box-sizing: border-box;
+  }
+
+  html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #000;
+  }
+
+  #stage {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+  }
+
+  .art {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    user-select: none;
+    -webkit-user-drag: none;
+    pointer-events: none;
+  }
+
+  #art11 {
+    display: none;
+  }
+
+  /* 눈 깜빡임 레이어 */
+  #blink {
+    position: fixed;
+    inset: -2px;
+    width: calc(100% + 4px);
+    height: calc(100% + 4px);
+    z-index: 9999;
+    pointer-events: none;
+    visibility: visible;
+  }
+
+  #blink svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+</style>
+<script src="../assets/project-sounds.js"></script>
+<script src="../assets/project-scroll-hint.js"></script>
+</head>
+
+<body>
+
+<main id="stage">
+  <img
+    class="art"
+    id="art10"
+    src="08-10.svg"
+    alt=""
+    draggable="false"
+  >
+
+  <img
+    class="art"
+    id="art11"
+    src="08-11.svg"
+    alt=""
+    draggable="false"
+  >
+</main>
+
+<!-- 눈 깜빡임 -->
+<div id="blink" aria-hidden="true">
+  <svg viewBox="0 0 1000 600"
+       preserveAspectRatio="none">
+
+    <defs>
+      <filter id="edgeBlur"
+              x="-15%" y="-30%"
+              width="130%" height="160%">
+        <feGaussianBlur stdDeviation="17"/>
+      </filter>
+    </defs>
+
+    <rect id="topCover"
+          x="-60" y="-60"
+          width="1120" height="60"
+          fill="black"/>
+
+    <rect id="bottomCover"
+          x="-60" y="600"
+          width="1120" height="60"
+          fill="black"/>
+
+    <path id="lidTop"
+          fill="black"
+          filter="url(#edgeBlur)"/>
+
+    <path id="lidBottom"
+          fill="black"
+          filter="url(#edgeBlur)"/>
+  </svg>
+</div>
+
+<script>
+(() => {
+
+  // 눈 깜빡임 속도
+  const CLOSE_MS = 850;
+  const HOLD_MS = 200;
+  const OPEN_MS = 950;
+
+  const blink = document.getElementById('blink');
+  const lidTop = document.getElementById('lidTop');
+  const lidBottom = document.getElementById('lidBottom');
+  const topCover = document.getElementById('topCover');
+  const bottomCover = document.getElementById('bottomCover');
+
+  const art10 = document.getElementById('art10');
+  const art11 = document.getElementById('art11');
+
+  let scene = 10;
+  let busy = true;
+
+  const clamp = n => Math.max(0, Math.min(1, n));
+
+  const ease = t => {
+    t = clamp(t);
+    return t * t * (3 - 2 * t);
+  };
+
+  // 눈꺼풀 모양
+  function drawEye(p) {
+    p = clamp(p);
+
+    const edge = 300 * p;
+    const curve = 190 * Math.sin(Math.PI * p);
+    const bottom = 600 - edge;
+    const fade = Math.min(1, Math.max(0, p / 0.12));
+
+    lidTop.setAttribute(
+      'd',
+      `M-100 -100 H1100 V${edge} Q500 ${edge + curve} -100 ${edge} Z`
+    );
+
+    lidBottom.setAttribute(
+      'd',
+      `M-100 700 H1100 V${bottom} Q500 ${bottom - curve} -100 ${bottom} Z`
+    );
+
+    for (const el of [
+      lidTop,
+      lidBottom,
+      topCover,
+      bottomCover
+    ]) {
+      el.style.opacity = fade;
+    }
+
+    topCover.setAttribute(
+      'height',
+      String(60 + Math.max(0, edge - 60))
+    );
+
+    bottomCover.setAttribute(
+      'y',
+      String(Math.min(600, bottom + 60))
+    );
+
+    bottomCover.setAttribute(
+      'height',
+      String(660 - Math.min(600, bottom + 60))
+    );
+  }
+
+  // 눈꺼풀 움직임
+  function tween(from, to, duration) {
+    if (from === 0 && to === 1) window.projectSounds?.play('blink');
+    return new Promise(resolve => {
+      const start = performance.now();
+
+      function tick(now) {
+        const t = Math.min(
+          1,
+          (now - start) / duration
+        );
+
+        drawEye(from + (to - from) * ease(t));
+
+        if (t < 1) {
+          requestAnimationFrame(tick);
+        } else {
+          resolve();
+        }
+      }
+
+      requestAnimationFrame(tick);
+    });
+  }
+
+  function pause(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  // 첫 번째 스크롤: 10 → 11
+  async function goTo11() {
+    if (busy || scene !== 10) return;
+
+    busy = true;
+    blink.style.visibility = 'visible';
+
+    // 눈 감기
+    await tween(0, 1, CLOSE_MS);
+
+    // 완전히 감긴 상태에서 이미지 교체
+    art10.style.display = 'none';
+    art11.style.display = 'block';
+    scene = 11;
+
+    await pause(HOLD_MS);
+
+    // 눈 뜨기
+    await tween(1, 0, OPEN_MS);
+
+    blink.style.visibility = 'hidden';
+    busy = false;
+  }
+
+  // 두 번째 스크롤: 11 → 04 페이지
+  function goToNextPage() {
+    if (busy || scene !== 11) return;
+
+    busy = true;
+
+    // index.html에서 눈 깜빡임과 페이지 전환 실행
+    if (window.parent !== window) {
+      window.parent.postMessage(
+        { type: 'NEXT_PAGE' },
+        '*'
+      );
+    } else {
+      // 단독 실행일 때도 다음 페이지로 이동
+      window.location.href = '04_efficiency.html';
+    }
+  }
+
+  // 아래로 스크롤할 때 실행
+  function handleScroll(e) {
+    if (e.deltaY <= 0 || busy) return;
+
+    if (scene === 10) {
+      goTo11();
+    } else if (scene === 11) {
+      goToNextPage();
+    }
+  }
+
+  window.addEventListener('wheel', handleScroll, {
+    passive: true
+  });
+
+  // 터치스크린에서도 위로 밀면 다음 장면
+  let touchStartY = 0;
+
+  window.addEventListener('touchstart', e => {
+    touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+
+  window.addEventListener('touchend', e => {
+    const diff = touchStartY - e.changedTouches[0].clientY;
+
+    if (diff > 40) {
+      handleScroll({ deltaY: diff });
+    }
+  }, { passive: true });
+
+  // 처음 페이지 진입할 때 눈 뜨기
+  async function start() {
+    drawEye(1);
+
+    await pause(100);
+    await tween(1, 0, OPEN_MS);
+
+    blink.style.visibility = 'hidden';
+    busy = false;
+  }
+
+  drawEye(1);
+
+  window.addEventListener('load', start, {
+    once: true
+  });
+
+
+window.installProjectScrollHint(() => !busy && (scene === 10 || scene === 11));
+})();
+</script>
+
+</body>
+</html>
+

@@ -1,0 +1,2093 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Drag Red Line</title>
+
+<style>
+
+@font-face{
+  font-family:"DIN2014ExtraBold";
+
+  src:url("../assets/DIN2014-ExtraBold.otf")
+      format("opentype");
+
+  font-weight:800;
+  font-style:normal;
+}
+
+*{
+  box-sizing:border-box;
+}
+
+html,
+body{
+  margin:0;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  background:#000;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.scene{
+  position:absolute;
+
+  left:50%;
+  top:50%;
+
+  width:max(100vw, calc(100vh * 16 / 9));
+  aspect-ratio:16 / 9;
+
+  transform:translate(-50%, -50%);
+
+  overflow:visible;
+}
+
+/* 빨간 선 */
+#drawCanvas{
+  position:absolute;
+
+  left:0;
+  top:0;
+
+  width:100%;
+  height:100%;
+
+  z-index:50;
+
+  pointer-events:none;
+}
+
+/* 손 */
+.hand{
+  position:absolute;
+
+  left:-15%;
+  top:18%;
+
+  width:130%;
+
+  z-index:100;
+
+  opacity:1;
+
+  cursor:grab;
+
+  user-select:none;
+  -webkit-user-drag:none;
+
+  touch-action:none;
+}
+
+#handClickHint {
+  position: absolute;
+  left: 50%;
+  top: 72%;
+  width: 10%;
+  transform: translate(-49.4%, -41.75%);
+  z-index: 101;
+  pointer-events: none;
+}
+
+#redlineClose {
+  position:absolute;
+  left:67.5%;
+  top:29.6%;
+  width:2.6%;
+  aspect-ratio:1;
+  padding:0;
+  border:1px solid #0000f2;
+  background:#bcbcbc;
+  color:#171717;
+  z-index:60;
+  cursor:pointer;
+}
+
+#redlineClose svg {
+  display:block;
+  width:100%;
+  height:100%;
+}
+
+#redlineClose:disabled {
+  cursor:default;
+}
+
+.hand.dragging{
+  cursor:grabbing;
+}
+
+.base{
+  position:absolute;
+  inset:0;
+
+  width:100%;
+  height:100%;
+
+  object-fit:contain;
+  object-position:center center;
+
+  z-index:1;
+
+  pointer-events:none;
+
+  display:block;
+}
+
+/* =========================================
+   눈 깜박임
+   ========================================= */
+
+/* =========================================
+   눈 깜박임
+   ========================================= */
+
+#blink{
+  position:fixed;
+
+  inset:-2px;
+
+  width:calc(100% + 4px);
+  height:calc(100% + 4px);
+
+  z-index:9999;
+
+  pointer-events:none;
+
+  visibility:hidden;
+}
+
+#blink svg{
+  width:100%;
+  height:100%;
+
+  display:block;
+}
+
+/* =========================================
+   stage18 : 확대 영상 + 중앙 텍스트
+   ========================================= */
+
+:root {
+  --press-font-size: 9.5vw;
+  --press-font-family: "DIN2014ExtraBold", sans-serif;/* 폰트 여기서 조절 */
+  --press-font-weight: 800; /* 두께 */
+  --press-letter-spacing: 0.02em; /* 자간 */
+  --press-text-color: #000000; /* 글자색 */
+}
+
+#stageVideo{
+  position:absolute;
+
+  left:50%;
+  top:50%;
+
+  width:100vw;
+  height:100vh;
+
+  transform:translate(-50%, -50%);
+
+  z-index:220;
+
+  display:none;
+  overflow:hidden;
+  background:#000;
+}
+
+#stageVideo.show{
+  display:block;
+}
+
+#stageVideoPlayer {
+  position: absolute;
+  inset: 0;
+
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+
+  /* 영상만 110% 확대 */
+  transform: scale(1.15);
+  transform-origin: center center;
+}
+
+
+/* 중앙 글씨와 버튼의 기준 위치 */
+#stageVideoUI {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+
+  transform: translate(-50%, -50%);
+  z-index: 221;
+
+  text-align: center;
+}
+
+/* 기존 중앙 글씨 */
+#stageVideoText {
+  color: var(--press-text-color);
+  font-size: var(--press-font-size);
+  font-family: "DIN2014ExtraBold", sans-serif;
+  font-weight: var(--press-font-weight);
+  letter-spacing: var(--press-letter-spacing);
+
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* RESTART 버튼 */
+
+/* RESTART 버튼 */
+#restartButton {
+  position: absolute;
+
+  left: 50%;
+  top: calc(100% + 2.5vh);
+  transform: translateX(-50%);
+
+  /* 버튼 크기 */
+  padding: 12px 38px;
+
+  /* 투명 배경 + 검정 테두리 */
+  background: transparent;
+  color: #000000;
+  border: 1.5px solid #000000;
+
+  /* 완전한 캡슐형 */
+  border-radius: 999px;
+
+  /* 얇은 글씨 */
+  font-family: "Arial", sans-serif;
+  font-size: clamp(13px, 1.2vw, 18px);
+  font-weight: 400;
+  letter-spacing: 0.08em;
+
+  white-space: nowrap;
+  cursor: pointer;
+
+  /* 영상 재생 중 숨김 */
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+
+  transition:
+    opacity 0.3s ease,
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+/* 영상이 끝나면 등장 */
+#restartButton.show {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+/* 마우스를 올렸을 때 */
+#restartButton:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+
+</style>
+<style>
+  #projectScrollHint { --project-scroll-hint-color: #0000ff; }
+</style>
+<script src="../assets/project-sounds.js"></script>
+<script src="../assets/project-scroll-hint.js"></script>
+</head>
+
+
+
+<body>
+
+
+<div class="scene">
+
+  <img
+    src="../assets/40-10.svg"
+    class="base"
+    id="baseImage"
+    alt=""
+  >
+
+  <button type="button" id="redlineClose" aria-label="Close pop-up and reveal the hand" hidden>
+    <svg viewBox="0 0 7 7" aria-hidden="true" shape-rendering="crispEdges">
+      <path fill="currentColor" d="M1 1h1v1H1z M5 1h1v1H5z M2 2h1v1H2z M4 2h1v1H4z M3 3h1v1H3z M2 4h1v1H2z M4 4h1v1H4z M1 5h1v1H1z M5 5h1v1H5z"/>
+    </svg>
+  </button>
+
+  <canvas id="drawCanvas"></canvas>
+
+  <img
+    src="../assets/34-hand.png"
+    class="hand"
+    id="hand"
+    data-click-sound="none"
+    hidden
+    alt=""
+  >
+  <img id="handClickHint" src="../assets/41.svg" alt="" hidden>
+
+  <div id="stageVideo">
+
+    <video
+      id="stageVideoPlayer"
+      src="../assets/18-video.mp4"
+      muted
+      playsinline
+      preload="auto"
+    ></video>
+
+   
+<!-- 중앙 글씨 + 재시작 버튼 -->
+<div id="stageVideoUI">
+
+  <div id="stageVideoText">
+    PRESS TO SUCCEED?
+  </div>
+
+  <button id="restartButton" type="button">
+    RESTART
+  </button>
+
+</div>
+
+
+  </div>
+
+</div>
+
+
+<!-- ★ scene 밖에 있어야 함 -->
+<div id="blink" aria-hidden="true">
+
+  <svg
+    viewBox="0 0 1000 600"
+    preserveAspectRatio="none"
+  >
+
+    <defs>
+      <filter
+        id="edgeBlur"
+        x="-15%"
+        y="-30%"
+        width="130%"
+        height="160%"
+      >
+        <feGaussianBlur stdDeviation="17"/>
+      </filter>
+    </defs>
+
+    <rect
+      id="topCover"
+      fill="black"
+    />
+
+    <rect
+      id="bottomCover"
+      fill="black"
+    />
+
+    <path
+      id="lidTop"
+      fill="black"
+      filter="url(#edgeBlur)"
+    />
+
+    <path
+      id="lidBottom"
+      fill="black"
+      filter="url(#edgeBlur)"
+    />
+
+    
+
+  </svg>
+
+</div>
+
+
+
+
+
+<script>
+
+
+const hand =
+  document.getElementById("hand");
+
+const canvas =
+  document.getElementById("drawCanvas");
+
+const ctx =
+  canvas.getContext("2d");
+
+const scene =
+  document.querySelector(".scene");
+
+
+let dragging = false;
+
+
+/* =========================================
+   손을 클릭한 위치
+
+   손을 잡는 순간 튀지 않게 하기 위해 필요
+   ========================================= */
+
+let grabOffsetX = 0;
+let grabOffsetY = 0;
+
+
+/* =========================================
+   마지막 색연필 위치
+   ========================================= */
+
+let lastTipX = null;
+let lastTipY = null;
+
+
+
+/* =========================================
+   CANVAS SIZE
+   ========================================= */
+
+function resizeCanvas(){
+
+  const rect =
+    scene.getBoundingClientRect();
+
+  const dpr =
+    window.devicePixelRatio || 1;
+
+
+  canvas.width =
+    rect.width * dpr;
+
+  canvas.height =
+    rect.height * dpr;
+
+
+  canvas.style.width =
+    rect.width + "px";
+
+  canvas.style.height =
+    rect.height + "px";
+
+
+  ctx.setTransform(
+    dpr,
+    0,
+    0,
+    dpr,
+    0,
+    0
+  );
+
+}
+
+
+window.addEventListener(
+  "resize",
+  resizeCanvas
+);
+
+
+resizeCanvas();
+
+
+
+/* =========================================
+   색연필 끝 위치
+
+   ★★★ 가장 중요 ★★★
+
+   34-hand.png 안에서
+   실제 빨간 색연필 끝이 어디 있는지 지정
+
+   0 = 왼쪽/위
+   1 = 오른쪽/아래
+   ========================================= */
+
+
+/*
+  지금 이미지 기준 임시값.
+
+  손 이미지에 따라
+  이것만 조금씩 수정하면 됨.
+*/
+
+/* =========================================
+   실제 손 픽셀 위에서만 드래그 시작
+   ========================================= */
+
+const hitCanvas =
+  document.createElement("canvas");
+
+const hitCtx =
+  hitCanvas.getContext("2d");
+
+
+function prepareHitCanvas(){
+
+  hitCanvas.width =
+    hand.naturalWidth;
+
+  hitCanvas.height =
+    hand.naturalHeight;
+
+  hitCtx.clearRect(
+    0,
+    0,
+    hitCanvas.width,
+    hitCanvas.height
+  );
+
+  hitCtx.drawImage(
+    hand,
+    0,
+    0
+  );
+
+}
+
+
+if(hand.complete){
+
+  prepareHitCanvas();
+
+}else{
+
+  hand.addEventListener(
+    "load",
+    prepareHitCanvas
+  );
+
+}
+
+
+function isVisibleHandPixel(event){
+
+  const rect =
+    hand.getBoundingClientRect();
+
+
+  const localX =
+    (event.clientX - rect.left) /
+    rect.width;
+
+
+  const localY =
+    (event.clientY - rect.top) /
+    rect.height;
+
+
+  if(
+    localX < 0 ||
+    localX > 1 ||
+    localY < 0 ||
+    localY > 1
+  ){
+    return false;
+  }
+
+
+  const px =
+    Math.floor(
+      localX *
+      hitCanvas.width
+    );
+
+
+  const py =
+    Math.floor(
+      localY *
+      hitCanvas.height
+    );
+
+
+  const pixel =
+    hitCtx.getImageData(
+      px,
+      py,
+      1,
+      1
+    ).data;
+
+
+  /* alpha가 충분히 있는 픽셀만 클릭 인정 */
+  return pixel[3] > 100;
+
+}
+
+/* =========================================
+   펜촉 위치
+   ========================================= */
+
+const TIP_X = 0.07;
+const TIP_Y = 0.10;
+
+
+/* =========================================
+   2줄 레일 설정
+   ========================================= */
+
+const DRAW_ZONES = [
+  
+
+  {
+    id: "line1",
+
+    /* YOU DIDN'T TRY */
+    startX: 0.371,
+    endX: 0.677,
+
+    lineY: 0.463
+  },
+
+  {
+    id: "line2",
+
+    /* HARD ENOUGH */
+    startX: 0.371,
+    endX: 0.615,
+
+    lineY: 0.579
+  }
+
+];
+
+const START_HAND_OFFSET_RATIO = 0.13;
+
+let stage18Shown = false;
+let blinkFinished = false;
+let blinking = false;
+let videoShown = false;
+
+const stage18 =
+  document.getElementById("stage18");
+
+const stage18Video =
+  document.getElementById("stage18Video");
+
+const stage18Text =
+  document.getElementById("stage18Text");
+
+const baseImage =
+  document.getElementById("baseImage");
+
+const INTRO_HOLD_MS = 3000;
+const redlineClose = document.getElementById("redlineClose");
+const handClickHint = document.getElementById("handClickHint");
+
+redlineClose.addEventListener("click", () => {
+  redlineClose.disabled = true;
+  hand.hidden = false;
+  handClickHint.hidden = false;
+});
+
+async function revealRedlineWindow() {
+  const popup = new Image();
+  popup.src = "../assets/40-18.svg";
+  await Promise.all([
+    baseImage.decode().then(() => new Promise(resolve => setTimeout(resolve, INTRO_HOLD_MS))),
+    popup.decode()
+  ]);
+
+  baseImage.src = popup.src;
+  await baseImage.decode();
+  redlineClose.hidden = false;
+  window.projectSounds?.play("systemError");
+}
+
+revealRedlineWindow().catch(console.error);
+
+function showStage18(){
+
+  if(stage18Shown) return;
+
+  stage18Shown = true;
+
+  stage18.classList.add("show");
+
+  /* 기존 장면 숨기기 */
+  baseImage.style.display = "none";
+  canvas.style.display = "none";
+  hand.style.display = "none";
+
+  /* 영상 처음부터 재생 */
+  stage18Video.currentTime = 0;
+  stage18Video.play().catch(() => {});
+}
+
+
+hand.addEventListener(
+  "pointerdown",
+
+  (event) => {
+
+    if(!isVisibleHandPixel(event)){
+      return;
+    }
+
+    handClickHint.hidden = true;
+
+
+    const rect =
+      getBaseContentRect();
+
+
+    const zone =
+      DRAW_ZONES[currentLine];
+
+
+    /* 현재 줄의 실제 시작점 */
+
+    const startTipX =
+      rect.left +
+      rect.width *
+      zone.startX;
+
+
+    const lineY =
+      rect.top +
+      rect.height *
+      zone.lineY;
+
+
+    /* 손 크기 */
+
+    const handRect =
+  hand.getBoundingClientRect();
+
+  const sceneRect =
+  scene.getBoundingClientRect();
+
+
+
+/* 드래그 중이랑 똑같은 기준 */
+const HAND_ANCHOR_X =
+  handRect.width * 0.5;
+
+const HAND_ANCHOR_Y =
+  handRect.height * 0.3;
+
+  const START_HAND_OFFSET_X =
+  rect.width * START_HAND_OFFSET_RATIO;
+
+
+hand.style.left =
+  (
+    startTipX -
+    sceneRect.left -
+    HAND_ANCHOR_X +
+    START_HAND_OFFSET_X
+  ) + "px";
+
+hand.style.top =
+  (
+    lineY -
+    sceneRect.top -
+    HAND_ANCHOR_Y
+  ) + "px";
+
+
+dragging = true;
+
+hand.classList.add(
+  "dragging"
+);
+
+dragStartPointerX =
+  event.clientX;
+
+lastDrawX =
+  null;
+
+hand.setPointerCapture(
+  event.pointerId
+);
+  }
+);
+
+let currentLine = 0;
+
+let dragStartPointerX = 0;
+let dragStartTipX = 0;
+
+let activeZone = null;
+let lastDrawX = null;
+
+
+
+/* ==================================================
+   실제 SVG가 화면에서 보이는 영역 계산
+
+   object-fit: contain 때문에
+   검은 여백은 제외하고 계산함
+   ================================================== */
+function getBaseContentRect(){
+
+  const base =
+    document.querySelector(".base");
+
+  const box =
+    base.getBoundingClientRect();
+
+  const naturalW =
+    base.naturalWidth;
+
+  const naturalH =
+    base.naturalHeight;
+
+  const imageRatio =
+    naturalW / naturalH;
+
+  const boxRatio =
+    box.width / box.height;
+
+
+  let width;
+  let height;
+  let left;
+  let top;
+
+
+  if(boxRatio > imageRatio){
+
+    height = box.height;
+    width = height * imageRatio;
+
+    left =
+      box.left +
+      (box.width - width) / 2;
+
+    top = box.top;
+
+  }else{
+
+    width = box.width;
+    height = width / imageRatio;
+
+    left = box.left;
+
+    top =
+      box.top +
+      (box.height - height) / 2;
+
+  }
+
+
+  return {
+    left,
+    top,
+    width,
+    height
+  };
+
+}
+
+
+
+/* ==================================================
+   실제 색연필 끝 좌표
+   ================================================== */
+
+function getPencilTip(){
+
+  const handRect =
+    hand.getBoundingClientRect();
+
+
+  return {
+
+    x:
+      handRect.left +
+      handRect.width * TIP_X,
+
+    y:
+      handRect.top +
+      handRect.height * TIP_Y
+
+  };
+
+}
+
+
+
+/* ==================================================
+   현재 펜 끝이 어느 문장 영역 안에 있는지 체크
+   ================================================== */
+
+
+
+/* ==================================================
+   자유 드래그
+
+   손은 자유롭게 움직임
+   하지만 선은 지정된 영역 안에서만 생성
+   ================================================== */
+
+  hand.addEventListener(
+  "pointermove",
+
+  (event) => {
+
+    if(!dragging) return;
+
+
+    const sceneRect =
+      scene.getBoundingClientRect();
+
+    const rect =
+      getBaseContentRect();
+
+    const zone =
+      DRAW_ZONES[currentLine];
+
+
+    /* 마우스를 얼마나 오른쪽으로 움직였는지 */
+    const deltaX =
+      event.clientX -
+      dragStartPointerX;
+
+
+    /* 왼쪽 이동은 무시 */
+    if(deltaX <= 8){
+      return;
+    }
+
+
+    /*
+      드래그 진행률
+
+      약 350px 움직이면 한 줄 완료.
+      이 숫자로 드래그 민감도 조절 가능.
+    */
+
+    const DRAG_DISTANCE =
+  rect.width * 0.4;
+
+    let progress =
+      deltaX /
+      DRAG_DISTANCE;
+
+
+    progress =
+      Math.max(
+        0,
+        Math.min(progress, 1)
+      );
+
+
+    /* =====================================
+       빨간 선 좌표
+       손 위치와 완전히 분리
+       ===================================== */
+
+    const lineStartX =
+      rect.left +
+      rect.width *
+      zone.startX;
+
+
+    const lineEndX =
+      rect.left +
+      rect.width *
+      zone.endX;
+
+
+    const currentLineX =
+      lineStartX +
+      (
+        lineEndX -
+        lineStartX
+      ) *
+      progress;
+
+
+    const lineY =
+      rect.top +
+      rect.height *
+      zone.lineY;
+
+
+
+    /* =====================================
+       이전 프레임부터 현재까지 선 생성
+       ===================================== */
+
+    if(lastDrawX === null){
+
+      lastDrawX =
+        lineStartX;
+
+    }
+
+
+    drawCrayonStroke(
+      lastDrawX,
+      currentLineX,
+      lineY - sceneRect.top
+    );
+
+
+    lastDrawX =
+      currentLineX;
+
+
+
+    /* =====================================
+       손도 같은 진행률을 따라 이동
+       ===================================== */
+
+    const handRect =
+      hand.getBoundingClientRect();
+
+
+    /*
+      아래 두 값만 조절하면
+      실제 펜촉을 빨간줄 끝에 맞출 수 있음.
+    */
+
+    const HAND_ANCHOR_X =
+      handRect.width * 0.5;
+
+    const HAND_ANCHOR_Y =
+      handRect.height * 0.3;
+
+      const START_HAND_OFFSET_X =
+  rect.width * START_HAND_OFFSET_RATIO;
+
+const DRAG_HAND_OFFSET_X =
+  rect.width * 0.015;
+
+
+    hand.style.left =
+  (
+    currentLineX -
+    sceneRect.left -
+    HAND_ANCHOR_X +
+    START_HAND_OFFSET_X +
+    DRAG_HAND_OFFSET_X
+  ) + "px";
+
+
+    hand.style.top =
+      (
+        lineY -
+        sceneRect.top -
+        HAND_ANCHOR_Y
+      ) + "px";
+
+
+
+    /* 줄 끝 */
+
+    if(progress >= 1){
+
+      finishCurrentLine();
+
+    }
+
+  }
+);
+
+
+
+
+
+ 
+
+  
+
+
+function finishCurrentLine(){
+
+  dragging = false;
+
+  hand.classList.remove(
+    "dragging"
+  );
+
+
+  /*
+    첫 번째 줄 끝났으면
+    자동으로 두 번째 줄 시작점으로 내려감
+  */
+
+  if(currentLine === 0){
+
+    currentLine = 1;
+
+
+    const rect =
+      getBaseContentRect();
+
+
+    const next =
+      DRAW_ZONES[1];
+
+      
+
+
+    const nextX =
+      rect.left +
+      rect.width *
+      next.startX;
+
+
+    const nextY =
+      rect.top +
+      rect.height *
+      next.lineY;
+
+
+    const handRect =
+      hand.getBoundingClientRect();
+
+
+    const HAND_ANCHOR_X =
+  handRect.width * 0.5;
+
+const HAND_ANCHOR_Y =
+  handRect.height * 0.3;
+
+
+    const sceneRect =
+  scene.getBoundingClientRect();
+
+  const START_HAND_OFFSET_X =
+  rect.width * START_HAND_OFFSET_RATIO;
+
+hand.style.left =
+  (
+    nextX -
+    sceneRect.left -
+    HAND_ANCHOR_X +
+    START_HAND_OFFSET_X
+  ) + "px";
+
+hand.style.top =
+  (
+    nextY -
+    sceneRect.top -
+    HAND_ANCHOR_Y
+  ) + "px";
+
+    lastDrawX =
+      null;
+
+  }
+
+  /*
+    두 번째 줄까지 끝났으면
+    그냥 그 상태 유지
+  */
+
+  else{
+  currentLine = 1;
+
+  setTimeout(() => {
+    showStage18();
+  }, 1500);
+}
+}
+
+hand.addEventListener(
+  "pointerup",
+
+  () => {
+
+    dragging = false;
+
+    hand.classList.remove(
+      "dragging"
+    );
+
+  }
+);
+
+hand.addEventListener(
+  "pointercancel",
+
+  () => {
+
+    dragging = false;
+
+    hand.classList.remove(
+      "dragging"
+    );
+
+  }
+);
+
+function drawCrayonStroke(x1, x2, y) {
+
+  const sceneRect =
+    scene.getBoundingClientRect();
+
+  /* 브라우저 좌표 → canvas 좌표 */
+  x1 -= sceneRect.left;
+  x2 -= sceneRect.left;
+
+  const distance =
+    Math.abs(x2 - x1);
+
+  if(distance < 1) return;
+
+  const direction =
+    x2 >= x1 ? 1 : -1;
+
+
+  /* ==========================
+     ★ 여기만 나중에 조절
+     ========================== */
+
+  const sceneWidth =
+  scene.getBoundingClientRect().width;
+
+const thickness =
+  sceneWidth * 0.02;  // 전체 두께
+  const passes = 17;        // 겹치는 횟수
+  const roughness = 5;     // 가장자리 거칠기
+  const gapChance = 0.1;  // 중간중간 비는 정도
+
+  /* ========================== */
+
+
+  ctx.save();
+
+  ctx.lineCap = "butt";
+  ctx.lineJoin = "round";
+
+
+  /* 1. 여러 개의 거친 크레용 결 */
+  for(let p = 0; p < passes; p++){
+
+    const baseOffset =
+      (Math.random() - 0.5) *
+      thickness * 0.8;
+
+    let x = x1;
+
+    while(
+      direction > 0
+        ? x < x2
+        : x > x2
+    ){
+
+      const segmentLength =
+        4 + Math.random() * 14;
+
+      const nextX =
+        direction > 0
+          ? Math.min(x + segmentLength, x2)
+          : Math.max(x - segmentLength, x2);
+
+
+      /*
+        일부 구간을 일부러 안 그림
+        → 종이결 때문에 크레용이 안 묻은 느낌
+      */
+      if(Math.random() > gapChance){
+
+        const y1 =
+          y +
+          baseOffset +
+          (Math.random() - 0.5) *
+          roughness;
+
+        const y2 =
+          y +
+          baseOffset +
+          (Math.random() - 0.5) *
+          roughness;
+
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+          x,
+          y1
+        );
+
+        ctx.lineTo(
+          nextX,
+          y2
+        );
+
+
+        ctx.strokeStyle =
+  `rgba(
+    190,
+    15,
+    20,
+    ${0.35 + Math.random() * 0.25}
+  )`;
+
+
+        ctx.lineWidth =
+          2 +
+          Math.random() *
+          thickness * 0.45;
+
+        ctx.stroke();
+      }
+
+      x = nextX;
+    }
+  }
+
+
+  /* 2. 중심에 조금 더 진한 색을 불규칙하게 추가 */
+
+  let coreX = x1;
+
+  while(
+    direction > 0
+      ? coreX < x2
+      : coreX > x2
+  ){
+
+    const segmentLength =
+      6 + Math.random() * 18;
+
+    const nextX =
+      direction > 0
+        ? Math.min(coreX + segmentLength, x2)
+        : Math.max(coreX - segmentLength, x2);
+
+
+    if(Math.random() > 0.12){
+
+      ctx.beginPath();
+
+      ctx.moveTo(
+        coreX,
+        y + (Math.random() - 0.5) * 3
+      );
+
+      ctx.lineTo(
+        nextX,
+        y + (Math.random() - 0.5) * 3
+      );
+
+      ctx.strokeStyle =
+        `rgba(
+          195,
+          18,
+          23,
+          ${0.28 + Math.random() * 0.18}
+        )`;
+
+      ctx.lineWidth =
+        3 + Math.random() * 5;
+
+      ctx.stroke();
+    }
+
+    coreX = nextX;
+  }
+
+
+  /* 3. 가장자리 크레용 가루 */
+
+  const particles =
+    Math.ceil(
+      distance * 0.9
+    );
+
+
+  for(let i = 0; i < particles; i++){
+
+    if(Math.random() < 0.38){
+      continue;
+    }
+
+    const px =
+      x1 +
+      Math.random() *
+      (x2 - x1);
+
+
+    /*
+      중앙보다는 위/아래 가장자리에
+      가루가 더 많이 생기게
+    */
+
+    const edge =
+      Math.random() < 0.5
+        ? -1
+        : 1;
+
+    const py =
+      y +
+      edge *
+      (
+        thickness * 0.25 +
+        Math.random() *
+        thickness * 0.55
+      );
+
+
+    const particleScale =
+  sceneWidth / 1000;
+
+const size =
+  (0.4 + Math.random() * 1.8) *
+  particleScale;
+
+
+    ctx.fillStyle =
+  `rgba(
+    180,
+    10,
+    15,
+    ${0.18 + Math.random() * 0.25}
+  )`;
+
+
+    ctx.fillRect(
+      px,
+      py,
+      size * (0.5 + Math.random()),
+      size
+    );
+  }
+
+
+  ctx.restore();
+}
+
+/* =========================================
+   두 줄 완료 → 37-18.svg
+   ========================================= */
+
+function showStage18(){
+
+  if(stage18Shown) return;
+
+  stage18Shown = true;
+
+  const baseImage =
+    document.getElementById("baseImage");
+
+
+  /* 빨간 선 지우기 */
+  ctx.clearRect(
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  );
+
+
+  /* 손 숨기기 */
+  hand.style.display = "none";
+  redlineClose.hidden = true;
+
+
+  /* 18 이미지로 변경 */
+  baseImage.src =
+    "../assets/37-18.svg";
+}
+
+
+/* =========================================
+   18이 나온 뒤 스크롤하면 눈 깜박임
+   ========================================= */
+
+window.addEventListener(
+  "wheel",
+
+  (event) => {
+
+    /* 아래로 스크롤할 때만 */
+    if(event.deltaY <= 0) return;
+
+
+    /* 아직 18이 안 나왔으면 아무것도 안 함 */
+    if(!stage18Shown){
+      return;
+    }
+
+
+    /* =========================================
+       18 → 19
+       ========================================= */
+
+    if(
+      stage18Shown &&
+      !blinkFinished
+    ){
+
+      if(blinking) return;
+
+      triggerBlink();
+
+      return;
+    }
+
+
+    /* =========================================
+       19 → 영상
+       ========================================= */
+
+    if(
+  blinkFinished &&
+  !videoShown
+){
+
+  if(blinking) return;
+
+  triggerVideoBlink();
+
+  return;
+}
+
+  },
+
+  {
+    passive:true
+  }
+);
+
+/* =========================================
+   눈 감기 → 37-19 → 다시 뜨기
+   ========================================= */
+
+   /* =========================================
+   03_blink 방식 눈 깜박임
+   ========================================= */
+
+const blink =
+  document.getElementById("blink");
+
+const lidTop =
+  document.getElementById("lidTop");
+
+const lidBottom =
+  document.getElementById("lidBottom");
+
+const topCover =
+  document.getElementById("topCover");
+
+const bottomCover =
+  document.getElementById("bottomCover");
+
+ 
+
+/* 속도 */
+const CLOSE_MS = 850;
+const HOLD_MS = 200;
+const OPEN_MS = 950;
+
+
+function clamp(n){
+
+  return Math.max(
+    0,
+    Math.min(1, n)
+  );
+
+}
+
+
+function ease(t){
+
+  t = clamp(t);
+
+  return (
+    t *
+    t *
+    (3 - 2 * t)
+  );
+
+}
+
+function drawEye(p) {
+
+  p = clamp(p);
+
+  const edge =
+    300 * p;
+
+  /*
+    ★ 핵심
+    눈이 반쯤 감길 때 가장 크게 휘어지고,
+    완전히 감길 때 다시 평평해짐
+  */
+  const curve =
+    190 *
+    Math.sin(Math.PI * p);
+
+  const bottom =
+    600 - edge;
+
+  const fade =
+    Math.min(
+      1,
+      Math.max(
+        0,
+        p / 0.12
+      )
+    );
+
+
+  /* =========================
+     위 눈꺼풀
+     ========================= */
+
+  lidTop.setAttribute(
+    "d",
+
+    `
+    M -100 -100
+    H 1100
+    V ${edge}
+
+    Q 500 ${edge + curve}
+      -100 ${edge}
+
+    Z
+    `
+  );
+
+
+  /* =========================
+     아래 눈꺼풀
+     ========================= */
+
+  lidBottom.setAttribute(
+    "d",
+
+    `
+    M -100 700
+    H 1100
+    V ${bottom}
+
+    Q 500 ${bottom - curve}
+      -100 ${bottom}
+
+    Z
+    `
+  );
+
+
+  /* 가장자리 천천히 나타남 */
+
+  for (const el of [
+    lidTop,
+    lidBottom,
+    topCover,
+    bottomCover
+  ]) {
+
+    el.style.opacity =
+      fade;
+
+  }
+
+
+  /* =========================
+     위쪽 검정 영역
+     ========================= */
+
+  topCover.setAttribute(
+    "height",
+
+    String(
+      60 +
+      Math.max(
+        0,
+        edge - 60
+      )
+    )
+  );
+
+
+  /* =========================
+     아래쪽 검정 영역
+     ========================= */
+
+  bottomCover.setAttribute(
+    "y",
+
+    String(
+      Math.min(
+        600,
+        bottom + 60
+      )
+    )
+  );
+
+
+  bottomCover.setAttribute(
+    "height",
+
+    String(
+      660 -
+      Math.min(
+        600,
+        bottom + 60
+      )
+    )
+  );
+
+}
+
+/* 눈꺼풀 애니메이션 */
+function tween(
+  from,
+  to,
+  duration
+){
+  if (from === 0 && to === 1) window.projectSounds?.play('blink');
+
+  return new Promise(
+    resolve => {
+
+      const start =
+        performance.now();
+
+
+      function tick(now){
+
+        const t =
+          Math.min(
+            1,
+            (now - start) /
+            duration
+          );
+
+
+        drawEye(
+          from +
+          (to - from) *
+          ease(t)
+        );
+
+
+        if(t < 1){
+
+          requestAnimationFrame(
+            tick
+          );
+
+        }else{
+
+          resolve();
+
+        }
+
+      }
+
+
+      requestAnimationFrame(
+        tick
+      );
+
+    }
+  );
+
+}
+
+
+function pause(ms){
+
+  return new Promise(
+    resolve =>
+      setTimeout(
+        resolve,
+        ms
+      )
+  );
+
+}
+
+
+/* =========================================
+   18 → 눈 감기 → 19 → 눈 뜨기
+   ========================================= */
+
+async function triggerBlink(){
+
+  if(blinking) return;
+
+  blinking = true;
+
+
+  const baseImage =
+    document.getElementById(
+      "baseImage"
+    );
+
+
+  blink.style.visibility =
+    "visible";
+
+
+  /* 눈 감기 */
+  await tween(
+    0,
+    1,
+    CLOSE_MS
+  );
+
+
+  /* 완전히 감긴 순간 19로 변경 */
+  baseImage.src =
+    "../assets/37-19.svg";
+
+
+  /* 잠깐 감고 있기 */
+  await pause(
+    HOLD_MS
+  );
+
+
+  /* 눈 뜨기 */
+  await tween(
+    1,
+    0,
+    OPEN_MS
+  );
+
+
+  blink.style.visibility =
+    "hidden";
+
+
+  blinkFinished = true;
+  blinking = false;
+
+}
+
+async function triggerVideoBlink(){
+
+  if(blinking) return;
+
+  blinking = true;
+
+
+  const video =
+    document.getElementById(
+      "stageVideoPlayer"
+    );
+
+
+  blink.style.visibility =
+    "visible";
+
+
+  /* =============================
+     1. 눈 감기
+     ============================= */
+
+  await tween(
+    0,
+    1,
+    CLOSE_MS
+  );
+
+
+  /* =============================
+     2. 완전히 감긴 순간
+        영상 첫 장면으로 교체
+     ============================= */
+
+  showVideoStage();
+
+
+  /*
+    첫 프레임 로딩 안정화
+  */
+  video.pause();
+  video.currentTime = 0;
+
+
+  /* 감은 상태 잠깐 유지 */
+  await pause(
+    HOLD_MS
+  );
+
+
+  /* =============================
+     3. 영상은 정지한 채
+        눈만 뜨기
+     ============================= */
+
+  await tween(
+    1,
+    0,
+    OPEN_MS
+  );
+
+
+  /* 눈 완전히 뜬 상태 */
+  blink.style.visibility =
+    "hidden";
+
+
+  /* =============================
+     4. 완전히 뜬 뒤 잠깐 딜레이
+     ============================= */
+
+  await pause(
+    300
+  );
+
+
+  /* =============================
+     5. 이제 영상 재생
+     ============================= */
+
+  video.play().catch(() => {});
+
+
+  blinking = false;
+
+}
+
+
+function showVideoStage(){
+
+  if(videoShown) return;
+
+  videoShown = true;
+
+
+  const baseImage =
+    document.getElementById(
+      "baseImage"
+    );
+
+  const stageVideo =
+    document.getElementById(
+      "stageVideo"
+    );
+
+  const video =
+    document.getElementById(
+      "stageVideoPlayer"
+    );
+
+
+  /* 19 이미지 숨기기 */
+  baseImage.style.display =
+    "none";
+
+
+  /* 영상 장면 보이기 */
+  stageVideo.classList.add(
+    "show"
+  );
+
+
+  /*
+    ★ 중요
+    첫 프레임에 멈춘 상태로 보여주기
+  */
+  video.pause();
+  video.currentTime = 0;
+
+
+  /* 영상 끝나면 마지막 프레임에서 정지 */
+  video.addEventListener(
+    "ended",
+
+    () => {
+      video.pause();
+    },
+
+    {
+      once:true
+    }
+  );
+
+}
+
+
+/* =========================================
+   영상 종료 후 RESTART 버튼 표시
+========================================= */
+
+const restartButton =
+  document.getElementById("restartButton");
+
+const finalVideo =
+  document.getElementById("stageVideoPlayer");
+
+// 영상이 완전히 끝났을 때
+finalVideo.addEventListener("ended", () => {
+
+  finalVideo.pause();
+
+  // RESTART 버튼 등장
+  restartButton.classList.add("show");
+
+});
+
+/* =========================================
+   RESTART 클릭 → 첫 페이지로 이동
+========================================= */
+
+restartButton.addEventListener("click", () => {
+
+  // 전체 프로젝트의 첫 번째 페이지부터 다시 시작
+  const startURL = new URL(
+    "../index.html",
+    window.location.href
+  );
+
+  window.top.location.href = startURL.href;
+
+});
+
+/* ==========================================
+   13 → 14 눈 뜨기
+========================================== */
+
+async function openingBlink() {
+
+  // 눈을 감은 상태로 시작
+  drawEye(1);
+
+  blink.style.backgroundColor = "#000";
+  blink.style.visibility = "visible";
+
+  // 완전히 감은 상태 잠깐 유지
+  await pause(200);
+
+  // 검은 배경 제거
+  blink.style.backgroundColor = "transparent";
+
+  // 눈 뜨기
+  await tween(1, 0, 950);
+
+  // 눈꺼풀 숨기기
+  drawEye(0);
+  blink.style.visibility = "hidden";
+}
+
+openingBlink();
+
+
+
+window.installProjectScrollHint(() => stage18Shown && !blinking && !videoShown, { dark: true });
+</script>
+
+
+</body>
+</html>

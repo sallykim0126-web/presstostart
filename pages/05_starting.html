@@ -1,0 +1,716 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>05 — STARTING POINT</title>
+
+<style>
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #606060;
+}
+
+body {
+  display: grid;
+  place-items: center;
+}
+
+/* 1366 × 768 비율 유지 */
+#scene {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  background: #606060;
+
+  --reader-center: 50%;
+  --card-gap: 36%;
+}
+
+/* 배경 */
+#bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* 중앙 카드 리더기 */
+#reader {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+
+  /* 화면 크기에 맞춰 자동 조절 */
+  width: min(140vw, 180vh);
+  aspect-ratio: 1649 / 928;
+  height: auto;
+
+  transform: translate(-50%, -50%);
+  z-index: 5;
+}
+
+#reader img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+#readerOn {
+  opacity: 0;
+}
+
+/* 좌우 사원증 */
+.card {
+  position: absolute;
+  width: 38%;
+  height: auto;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-drag: none;
+  z-index: 10;
+}
+
+.card {
+  pointer-events: none;
+}
+
+.card img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  clip-path: var(--card-hit-area);
+  pointer-events: auto;
+  touch-action: none;
+}
+
+.card.dragging {
+  cursor: grabbing;
+  z-index: 30;
+}
+
+/* 리더기와 사원증 사이의 간격 */
+#scene {
+  --card-gap: 3%;
+}
+
+/* 여자 사원증: 오른쪽 끝을 기준으로 배치 */
+#female {
+  left: auto;
+  right: calc(50% + 11.8% + var(--card-gap));
+  --card-hit-area: polygon(21.4% 53%, 28.7% 53%, 32.5% 49.1%, 61.7% 49.1%, 65.8% 53%, 72.3% 53%, 72.3% 90.5%, 21.4% 90.5%);
+  top: 0;
+  transform: translateY(-32%);
+}
+
+/* 남자 사원증: 왼쪽 끝을 기준으로 배치 */
+#male {
+  left: calc(50% + 16% + var(--card-gap));
+  --card-hit-area: polygon(16.6% 53.3%, 23.8% 53.3%, 27.7% 49.4%, 57.3% 49.4%, 61.7% 53.3%, 68.2% 53.3%, 68.2% 91.3%, 16.6% 91.3%);
+  right: auto;
+  top: 0;
+  transform: translateY(-32%);
+}
+
+
+
+/* Hover cue between each badge and the reader. */
+.card-drag-hint {
+  position: absolute;
+  top: calc(48% + 24px);
+  width: 44px;
+  height: 40px;
+  transform: translate(-50%, -50%);
+  color: #0000f2;
+  z-index: 11;
+  pointer-events: none;
+  display: none;
+}
+
+#femaleDragHint { left: 29%; }
+#maleDragHint { left: 71%; transform: translate(-50%, -50%) scaleX(-1); }
+
+@media (hover: hover) {
+  #scene:not(.scanning, :has(.card.dragging)) #female:not(.scanned):hover ~ #femaleDragHint,
+  #scene:not(.scanning, :has(.card.dragging)) #male:not(.scanned):hover ~ #maleDragHint {
+    display: block;
+  }
+}
+
+.card-drag-hint polyline {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .card-drag-hint polyline {
+    animation-duration: 600ms;
+    animation-timing-function: steps(1, end);
+    animation-iteration-count: infinite;
+  }
+
+  .card-drag-hint polyline:nth-child(1) { animation-name: card-drag-first; }
+  .card-drag-hint polyline:nth-child(2) { animation-name: card-drag-second; }
+  .card-drag-hint polyline:nth-child(3) { animation-name: card-drag-third; }
+}
+
+@keyframes card-drag-first {
+  0% { opacity: 1; }
+  33.333% { opacity: 0.35; }
+  66.667% { opacity: 0; }
+}
+
+@keyframes card-drag-second {
+  0% { opacity: 0; }
+  33.333% { opacity: 1; }
+  66.667% { opacity: 0.35; }
+}
+
+@keyframes card-drag-third {
+  0% { opacity: 0; }
+  66.667% { opacity: 1; }
+}
+
+/* 가운데 리더기 */
+#reader {
+  left: var(--reader-center);
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* 화면 어둡게 */
+#dim {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 300ms;
+  z-index: 40;
+}
+
+#dim.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+#popupWrap {
+  position: absolute;
+
+  left: 50%;
+  top: 50%;
+
+  transform: translate(-50%, -50%);
+
+  width: 88%;
+  height: auto;
+
+  z-index: 50;
+
+  pointer-events: none;
+}
+
+/* 정보창 */
+/* 정보창 */
+#popup {
+  position: relative;
+
+  display: block;
+
+  width: 100%;
+  height: auto;
+
+  object-fit: contain;
+
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+
+  transform: scale(.92);
+
+  transition:
+    opacity 300ms,
+    transform 300ms;
+}
+
+#popup.show {
+  opacity: 1;
+  visibility: visible;
+
+  transform: scale(1);
+}
+
+/* 닫기 버튼 */
+/* 닫기 버튼 */
+#close {
+  position: absolute;
+
+  right: 16%;
+  top: 16.7%;
+
+  z-index: 55;
+
+  border: 0;
+  background: transparent;
+
+  width: clamp(14px, 1.4vw, 22px);
+  height: clamp(14px, 1.4vw, 22px);
+
+  padding: 0;
+  cursor: pointer;
+  font-size: 0;
+
+  display: none;
+  pointer-events: auto;
+}
+
+#close::before,
+#close::after {
+  content: "";
+
+  position: absolute;
+  left: 50%;
+  top: 50%;
+
+  width: 100%;
+  height: clamp(1px, 0.12vw, 1.6px);
+
+  background: white;
+
+  transform-origin: center;
+}
+
+#close::before {
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+#close::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+#close.show {
+  display: block;
+}
+
+#blink {
+  position: fixed;
+  inset: -2px;
+  z-index: 9999;
+  pointer-events: none;
+  visibility: hidden;
+  overflow: hidden;
+}
+
+#blink svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+@media (hover: hover) {
+  .card:hover { filter: brightness(0.78); }
+}
+
+.card.dragging { filter: brightness(0.78); }
+
+</style>
+<script src="../assets/project-sounds.js"></script>
+<script src="../assets/project-scroll-hint.js"></script>
+</head>
+
+<body data-mute-clicks>
+
+<div id="scene">
+
+  <!-- 11-04 : 배경 -->
+  <img id="bg" src="../assets/11-04.svg" alt="">
+
+  <!-- 11-05 / 11-06 : 리더기 -->
+  <div id="reader">
+    <img id="readerOff" src="../assets/11-05.svg" alt="">
+    <img id="readerOn" src="../assets/11-06.svg" alt="">
+  </div>
+
+  <!-- 11-02 : 여자 사원증 -->
+  <div id="female" class="card">
+    <img src="../assets/11-02.svg" draggable="false" alt="Female employee ID">
+  </div>
+
+  <!-- 11-03 : 남자 사원증 -->
+  <div id="male" class="card">
+    <img src="../assets/11-03.svg" draggable="false" alt="Male employee ID">
+  </div>
+
+  <!-- 어두운 배경 -->
+
+  <svg id="femaleDragHint" class="card-drag-hint" viewBox="0 0 44 40" aria-hidden="true">
+    <polyline points="3 1 12 20 3 39"/>
+    <polyline points="17 1 26 20 17 39"/>
+    <polyline points="31 1 40 20 31 39"/>
+  </svg>
+  <svg id="maleDragHint" class="card-drag-hint" viewBox="0 0 44 40" aria-hidden="true">
+    <polyline points="3 1 12 20 3 39"/>
+    <polyline points="17 1 26 20 17 39"/>
+    <polyline points="31 1 40 20 31 39"/>
+  </svg>
+
+  <div id="dim"></div>
+
+  <!-- 11-07 / 11-08 정보창 -->
+  <div id="popupWrap">
+
+  <img id="popup" src="" alt="Initial condition">
+
+  <button id="close" aria-label="Close">×</button>
+
+</div>
+</div>
+
+<div id="blink">
+  <svg viewBox="0 0 1000 600" preserveAspectRatio="none">
+    <defs>
+      <filter id="edgeBlur" x="-20%" y="-30%" width="140%" height="160%">
+        <feGaussianBlur stdDeviation="17"/>
+      </filter>
+    </defs>
+    <path id="lidTop" fill="black" filter="url(#edgeBlur)"/>
+    <path id="lidBottom" fill="black" filter="url(#edgeBlur)"/>
+    <rect id="topCover" x="0" y="0" width="1000" height="0" fill="black"/>
+    <rect id="bottomCover" x="0" y="600" width="1000" height="0" fill="black"/>
+  </svg>
+</div>
+
+<script>
+const scene = document.getElementById('scene');
+const female = document.getElementById('female');
+const male = document.getElementById('male');
+
+const reader = document.getElementById('reader');
+const readerOff = document.getElementById('readerOff');
+const readerOn = document.getElementById('readerOn');
+
+const dim = document.getElementById('dim');
+const popup = document.getElementById('popup');
+const closeBtn = document.getElementById('close');
+
+let activeCard = null;
+let readerActive = false;
+let offsetX = 0;
+let offsetY = 0;
+let popupOpen = false;
+
+// 두 사원증 인식 및 정보창 확인 여부
+let femaleCompleted = false;
+let maleCompleted = false;
+
+let currentScannedCard = null;
+let transitionStarted = false;
+
+/* 카드 초기 위치 저장 */
+const original = new Map();
+
+[female, male].forEach(card => {
+  original.set(card, {
+    left: card.style.left || getComputedStyle(card).left,
+    top: card.style.top || getComputedStyle(card).top
+  });
+});
+
+/* 카드 드래그 시작 */
+function startDrag(e) {
+  if (popupOpen || activeCard) return;
+
+  const card = e.currentTarget;
+  activeCard = card;
+
+  const rect = card.getBoundingClientRect();
+  const sceneRect = scene.getBoundingClientRect();
+
+  offsetX = e.clientX - rect.left;
+  offsetY = e.clientY - rect.top;
+
+  card.style.transform = 'none';
+  card.style.left = (rect.left - sceneRect.left) + 'px';
+  card.style.top = (rect.top - sceneRect.top) + 'px';
+
+  card.classList.add('dragging');
+  card.setPointerCapture(e.pointerId);
+}
+
+/* 카드 이동 */
+
+function moveDrag(e) {
+  if (activeCard !== e.currentTarget) return;
+
+  const sceneRect = scene.getBoundingClientRect();
+
+  // 좌우 이동
+  activeCard.style.left =
+    (e.clientX - sceneRect.left - offsetX) + 'px';
+
+  // 상하 이동
+  const newY = e.clientY - sceneRect.top - offsetY;
+
+  // 아래로 내려갈 수 있는 최대 위치
+  const maxY = -activeCard.getBoundingClientRect().height * 0.2;
+
+  activeCard.style.top =
+    Math.min(newY, maxY) + 'px';
+
+  setReaderActive(isOverReader(activeCard));
+}
+
+
+
+
+/* 원래 위치로 복귀 */
+function resetCard(card) {
+  card.style.left = '';
+  card.style.right = '';
+  card.style.top = '';
+  card.style.transform = '';
+  card.classList.remove('dragging');
+}
+
+/* 리더기 인식 판정 */
+function isOverReader(card) {
+  const a = card.getBoundingClientRect();
+  const b = reader.getBoundingClientRect();
+
+  // 카드의 사원증 부분이 중앙 리더기와 닿는지 검사
+  const cardX = a.left + a.width * 0.5;
+  const cardY = a.top + a.height * 0.76;
+
+  return (
+    cardX > b.left + b.width * 0.35 &&
+    cardX < b.right - b.width * 0.35 &&
+    cardY > b.top + b.height * 0.35 &&
+    cardY < b.bottom - b.height * 0.35
+  );
+}
+
+function setReaderActive(active) {
+  if (readerActive === active) return;
+  readerActive = active;
+  readerOff.style.opacity = active ? '0' : '1';
+  readerOn.style.opacity = active ? '1' : '0';
+  if (active) window.projectSounds?.play('cardScan');
+}
+
+/* 카드 인식 */
+function scanCard(card) {
+  setReaderActive(true);
+  popupOpen = true;
+  scene.classList.add('scanning');
+  card.classList.add('scanned');
+
+  // 지금 인식한 사원증 기억하기
+  currentScannedCard = card.id;
+
+  // 여자 → 07 / 남자 → 08
+  popup.src = card.id === 'female'
+    ? '../assets/11-07.svg'
+    : '../assets/11-08.svg';
+
+  // 0.5초 후 정보창 표시
+  setTimeout(() => {
+    dim.classList.add('show');
+    popup.classList.add('show');
+    closeBtn.classList.add('show');
+  }, 500);
+}
+
+/* 드래그 종료 */
+function endDrag(e) {
+  const card = e.currentTarget;
+  if (activeCard !== card) return;
+
+  card.classList.remove('dragging');
+
+  if (isOverReader(card)) {
+    scanCard(card);
+  } else {
+    setReaderActive(false);
+    resetCard(card);
+  }
+
+  activeCard = null;
+}
+
+/* 카드 드래그 이벤트 */
+[female, male].forEach(card => {
+  card.addEventListener('pointerdown', startDrag);
+  card.addEventListener('pointermove', moveDrag);
+  card.addEventListener('pointerup', endDrag);
+  card.addEventListener('pointercancel', () => {
+    if (activeCard === card) {
+      setReaderActive(false);
+      resetCard(card);
+      activeCard = null;
+    }
+  });
+});
+
+/* 정보창 닫기 */
+
+function closePopup() {
+  if (!popupOpen) return;
+  window.projectSounds?.play('click');
+
+  // X를 누른 사원증 기록
+  if (currentScannedCard === 'female') {
+    femaleCompleted = true;
+  }
+
+  if (currentScannedCard === 'male') {
+    maleCompleted = true;
+  }
+
+  currentScannedCard = null;
+
+  // 정보창 닫기
+  dim.classList.remove('show');
+  popup.classList.remove('show');
+  closeBtn.classList.remove('show');
+
+  setReaderActive(false);
+
+  resetCard(female);
+  resetCard(male);
+
+  popupOpen = false;
+  scene.classList.remove('scanning');
+
+  // 두 개 모두 확인한 경우에만 자동 전환
+  if (femaleCompleted && maleCompleted && !transitionStarted) {
+    transitionStarted = true;
+
+    setTimeout(() => {
+      blinkToNext();
+    }, 250);
+  }
+}
+
+
+
+closeBtn.addEventListener('click', closePopup);
+dim.addEventListener('click', closePopup);
+
+
+const blinkLayer = document.getElementById('blink');
+const lidTop = document.getElementById('lidTop');
+const lidBottom = document.getElementById('lidBottom');
+const topCover = document.getElementById('topCover');
+const bottomCover = document.getElementById('bottomCover');
+
+function drawEye(p) {
+  const edge = 300 * p;
+  const curve = 115 * Math.sin(Math.PI * p);
+  const bottom = 600 - edge;
+  const fade = Math.min(1, Math.max(0, p / 0.12));
+
+  [lidTop, lidBottom, topCover, bottomCover].forEach(el => {
+    el.style.opacity = fade;
+  });
+
+  lidTop.setAttribute('d',
+    `M -100 -100 H 1100 V ${edge} Q 500 ${edge + curve} -100 ${edge} Z`
+  );
+
+  lidBottom.setAttribute('d',
+    `M -100 700 H 1100 V ${bottom} Q 500 ${bottom - curve} -100 ${bottom} Z`
+  );
+
+  topCover.setAttribute('height', Math.max(0, edge - 80));
+  bottomCover.setAttribute('y', Math.min(600, bottom + 80));
+  bottomCover.setAttribute('height', Math.max(0, 600 - (bottom + 80)));
+
+  blinkLayer.style.backgroundColor =
+    p >= 0.999 ? '#000' : 'transparent';
+}
+
+function eye(from, to, duration) {
+  if (from === 0 && to === 1) window.projectSounds?.play('blink');
+  return new Promise(resolve => {
+    const start = performance.now();
+
+    function tick(now) {
+      const t = Math.min(1, (now - start) / duration);
+      // Reveal the next scene slowly at the start of the opening.
+      const progress = to < from ? Math.pow(t, 1.2) : t;
+      const eased = progress * progress * (3 - 2 * progress);
+
+      drawEye(from + (to - from) * eased);
+
+      if (t < 1) requestAnimationFrame(tick);
+      else resolve();
+    }
+
+    requestAnimationFrame(tick);
+  });
+}
+
+const BLINK_CLOSE_MS = 420;
+const BLINK_HOLD_MS = 150;
+const BLINK_OPEN_MS = 850;
+
+async function blinkToNext() {
+  const nextScene = new Image();
+  nextScene.src = '../assets/11-14.svg';
+  nextScene.alt = '';
+  nextScene.style.cssText =
+    'position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block';
+  const nextSceneReady = nextScene.decode().catch(error => console.warn(error));
+
+  blinkLayer.style.visibility = 'visible';
+  await eye(0, 1, BLINK_CLOSE_MS);
+
+  // Keep the fully closed eye on screen before replacing the scene.
+  await new Promise(resolve => {
+    requestAnimationFrame(() => requestAnimationFrame(resolve));
+  });
+
+  await nextSceneReady;
+  scene.replaceChildren(nextScene);
+
+  await new Promise(resolve => setTimeout(resolve, BLINK_HOLD_MS));
+  await eye(1, 0, BLINK_OPEN_MS);
+
+  blinkLayer.style.visibility = 'hidden';
+  blinkLayer.style.backgroundColor = 'transparent';
+
+  // Leave the revealed scene visible before allowing the next scroll.
+  await new Promise(resolve => setTimeout(resolve, 500));
+  document.documentElement.dataset.blinkDone = 'true';
+}
+
+
+window.installProjectScrollHint(() => window.parent !== window && document.documentElement.dataset.blinkDone === "true");
+</script>
+
+
+</body>
+</html>

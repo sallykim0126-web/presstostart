@@ -1,0 +1,144 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>06 — AFTER TIME</title>
+
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #000;
+  }
+
+  #scene {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    background: #000;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  #slide02 {
+    display: none;
+  }
+</style>
+<script src="../assets/project-sounds.js"></script>
+<script src="../assets/project-scroll-hint.js"></script>
+</head>
+
+<body>
+
+<div id="scene">
+  <img id="slide01" class="slide"
+       src="../assets/13-01.svg" alt="">
+
+  <img id="slide02" class="slide"
+       src="../assets/13-02.svg" alt="">
+</div>
+
+<script>
+(() => {
+  const slide01 = document.getElementById('slide01');
+  const slide02 = document.getElementById('slide02');
+
+  let scene = 1;
+  let transitioning = false;
+
+  // 이전 페이지에서 이어지는 스크롤 방지
+  let scrollReadyAt = performance.now() + 1500;
+
+  
+window.addEventListener('wheel', (e) => {
+
+  // 아래로 스크롤했을 때만 실행
+  if (e.deltaY <= 0) return;
+
+  // 전환 중에는 실행하지 않음
+  if (transitioning) return;
+
+  // 이전 스크롤 입력이 이어지는 것 방지
+  if (performance.now() < scrollReadyAt) return;
+
+  // ===================================
+  // 13-01 → 13-02
+  // ===================================
+  if (scene === 1) {
+
+    transitioning = true;
+
+    // 같은 HTML 안에서 눈 감고 SVG 변경
+    window.parent.postMessage(
+      { type: 'INTERNAL_BLINK' },
+      window.location.origin
+    );
+
+    return;
+  }
+
+  // ===================================
+  // 13-02 → 07_luck.html
+  // ===================================
+  if (scene === 2) {
+
+    transitioning = true;
+
+    // 눈 감고 다음 HTML 페이지로 이동
+    window.parent.postMessage(
+      { type: 'NEXT_PAGE' },
+      window.location.origin
+    );
+
+    return;
+  }
+
+}, { passive: true });
+
+
+  // 눈이 완전히 감겼을 때 이미지 변경
+  window.addEventListener('message', (event) => {
+    if (event.source !== window.parent) return;
+
+    if (
+      event.data?.type === 'BLINK_CLOSED' &&
+      transitioning &&
+      scene === 1
+    ) {
+      slide01.style.display = 'none';
+      slide02.style.display = 'block';
+      scene = 2;
+    }
+
+    if (
+      event.data?.type === 'BLINK_DONE' &&
+      transitioning
+    ) {
+      transitioning = false;
+      scrollReadyAt = performance.now() + 800;
+    }
+  });
+
+window.installProjectScrollHint(() => !transitioning && performance.now() >= scrollReadyAt);
+})();
+</script>
+
+</body>
+</html>

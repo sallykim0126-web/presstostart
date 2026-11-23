@@ -1,0 +1,805 @@
+
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>EFFORT — 실제 폴더 한 장 넘기기 v12</title>
+<style>
+*{
+  box-sizing:border-box;
+}
+
+html,
+body{
+  margin:0;
+  width:100%;
+  min-height:100%;
+  background:#aaa;
+
+  overscroll-behavior-y:none;
+  overscroll-behavior-x:none;
+}
+
+body{
+  overflow-x:hidden;
+}
+#scroll{
+  height:360vh;
+  position:relative;
+  background:#ccc;
+  overscroll-behavior:none;
+}
+
+#sticky{
+  position:sticky;
+  top:0;
+  height:100vh;
+  height:100dvh;
+  overflow:hidden;
+  background:#ccc;
+}
+
+#scene{width:1366px;height:768px;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(var(--scale,1));transform-origin:center;perspective:1900px;isolation:isolate;overflow:hidden}
+#dark{position:absolute;inset:0;z-index:1;opacity:0;pointer-events:none;background:radial-gradient(ellipse at 50% 48%,rgba(0,0,0,.15) 0%,rgba(0,0,0,.48) 80%,rgba(0,0,0,.58) 100%)}
+#group{position:absolute;inset:0;z-index:2;transform-style:preserve-3d;will-change:transform}
+/* 폴더 앞면 — 05 */
+#leader {
+  position: absolute;
+  left: 33px;
+  top: 18px;
+  width: 1366px;
+  height: 768px;
+  z-index: 1;
+  opacity: 1;
+}
+
+/* 폴더 앞면 — 05 */
+#front {
+  position: absolute;
+  left: 0px;
+  top: -10px;
+  width: 1366px;
+  height: 768px;
+
+  z-index: 4;
+  transform-origin: 30.8% 50%;
+  backface-visibility: hidden;
+}
+
+/* 폴더 뒷면 — 03 */
+#back {
+  position: absolute;
+  left: -36px;
+  top: -11px;
+  width: 1366px;
+  height: 768px;
+
+  z-index: 3;
+  transform-origin: 33.8% 50%;
+  visibility: visible;
+  backface-visibility: visible;
+  pointer-events: none;
+  user-select: none;
+
+  backface-visibility: visible;
+  transform-style: preserve-3d;
+}
+
+#back img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform: scaleX(-1);
+}
+
+#hinge{position:absolute;left:431px;top:43px;height:680px;width:10px;z-index:2;opacity:0;pointer-events:none;background:linear-gradient(90deg,transparent,rgba(0,0,0,.2),transparent);filter:blur(5px)}
+#hint {
+  position: absolute;
+  left: 50%;
+  --hint-width: max(calc(100vw * 185 / 1366), calc(100dvh * 185 / 768));
+  /* Offset the blank space beneath the lettering in the SVG. */
+  bottom: calc(1.3dvh - var(--hint-width) * 0.34);
+  transform: translateX(-50%);
+  width: var(--hint-width);
+  aspect-ratio: 150 / 126;
+  z-index: 9;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+#hint .frame {
+  position: absolute;
+  inset: 0;
+  display: block;
+  opacity: 0;
+  transition: opacity 130ms ease;
+}
+
+#hint .frame.active {
+  opacity: 1;
+  z-index: 2;
+}
+
+#hint .frame.ghost {
+  opacity: 0.35;
+  z-index: 1;
+}
+
+#hint .frame.skip-transition {
+  transition: none;
+}
+
+#hint .frame svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+#hint.visible {
+  visibility: visible;
+}
+/* ===== 리더보드 확대 화면 ===== */
+
+#leader {
+  cursor: zoom-in;
+}
+
+#rankOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0,0,0,.8);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .5s ease, visibility .5s;
+  overflow: hidden;
+}
+
+#rankOverlay.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+#rankStage {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 1366px;
+  height: 1000px;
+  transform: translate(-50%,-50%) scale(.25);
+  transform-origin: center;
+  opacity: .5;
+  transition:
+    transform .8s cubic-bezier(.17,.8,.22,1),
+    opacity .6s ease;
+}
+
+#rankOverlay.open #rankStage {
+  transform: translate(-50%,-50%)
+             scale(var(--boardScale,1));
+  opacity: 1;
+}
+
+#rankPaper {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+#rankLines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.rankLine {
+  position: absolute;
+  left: 369px;
+  width: 615px;
+  height: 41px;
+  display: grid;
+  grid-template-columns:
+    47px 128px 105px 110px 107px 58px 78px;
+  align-items: center;
+  font: 15px 'IBM Plex Mono', monospace;
+  color: #282828;
+  white-space: nowrap;
+}
+
+.rankLine span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rankLine.you {
+  font-weight: normal;
+  color: #282828;
+  background: transparent;
+}
+
+.rankLine.you span:nth-child(2) {
+  color: #1010e8;
+  font-weight: bold;
+}
+
+.rankLine.gap {
+  color: #777;
+}
+
+#rankStatus {
+  position: absolute;
+  left: 370px;
+  top: 920px;
+  width: 622px;
+  text-align: center;
+  font: 13px monospace;
+  color: #555;
+}
+
+#rankControls {
+  position: absolute;
+  left: 370px;
+  top: 951px;
+  width: 622px;
+  text-align: center;
+  font: 13px monospace;
+}
+
+#rankCode {
+  width: 105px;
+  text-align: center;
+  text-transform: uppercase;
+  font: 14px monospace;
+  padding: 5px;
+}
+
+#rankFind,
+#rankRefresh {
+  padding: 6px 10px;
+  color: white;
+  background: #111;
+  border: 0;
+  cursor: pointer;
+}
+
+#rankClose {
+  position: fixed;
+
+  right: clamp(12px, 2vw, 32px);
+  top: clamp(12px, 2vh, 24px);
+
+  z-index: 102;
+
+  background: white;
+  color: black;
+  border: 2px solid black;
+
+  width: clamp(26px, 2.6vw, 36px);
+height: clamp(26px, 2.6vw, 36px);
+font: clamp(14px, 1.2vw, 20px) monospace;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0;
+  cursor: pointer;
+}
+
+/* 기존 리더보드와 똑같은 위치 */
+#slidePaper {
+  position: absolute;
+  left: -220px;
+  top: 3px;
+  width: 1366px;
+  height: 768px;
+  z-index: 2;
+
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: auto;
+  cursor: pointer;
+  transform: translateX(0);
+}
+
+/* 07-12 종이가 나타남 */
+#slidePaper.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* 오른쪽으로 화면 밖까지 이동 */
+#slidePaper.moveRight {
+  transform: translateX(1600px);
+  transition: transform 1.8s ease-in-out;
+}
+/* 07-09 이미지 위치 조정 */
+#leader.afterClose {
+  left: -10.5px;
+  top: 22.5px;
+}
+
+#leaderClickHint {
+  position: absolute;
+  inset: auto;
+  left: 75.4%;
+  top: 31.3%;
+  width: 14%;
+  height: auto;
+  transform: translate(-50%, -50%);
+  z-index: 8;
+  pointer-events: none;
+}
+#leaderClickHint:not(.visible) { visibility: hidden; }
+</style><script src="../assets/project-sounds.js"></script>
+<script src="../assets/project-scroll-hint.js"></script>
+</head><body>
+<section id="scroll"><div id="sticky"><div id="scene">
+  <img id="bg" src="05-04 2.svg">
+<div id="dark"></div>
+<img id="leaderClickHint" src="../assets/41.svg" alt="" aria-hidden="true">
+<div id="group">
+  <img id="leader" src="06-01.svg">
+  <img id="slidePaper" src="07-12.svg" alt="">
+  <div id="back">
+  <img src="05-03 2.svg" alt="">
+</div>
+  <img id="front" src="05-05 2.svg">
+<div id="hinge"></div>
+</div>
+</div>
+<div id="hint" aria-hidden="true">
+  <div class="frame active" data-frame="0"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 181.313 153.033"><defs><style>.cls-1{isolation:isolate;}.cls-2{fill:none;stroke:#0000f2;stroke-miterlimit:10;stroke-width:1.725px;}.cls-3{fill:#0000f2;}.cls-4{mix-blend-mode:hard-light;}</style></defs><g class="cls-1"><g id="_레이어_1"><g class="cls-4"><path class="cls-3" d="M68.187,89.122h-.906c.06.242.091.544.091.905,0,.348-.031.65-.091.906h-4.98q-.091-.384-.091-.906,0-.542.091-.905h4.074q-.089-.384-.09-.906,0-.543.09-.905h-3.622c-.06-.257-.09-.559-.09-.906,0-.362.03-.664.09-.905h-.905q-.091-.385-.091-.906,0-.543.091-.905h.905c-.06-.257-.09-.559-.09-.906,0-.362.03-.664.09-.906h4.981q.09.363.09.906,0,.521-.09.906h-4.075q.09.362.09.905,0,.521-.09.906h3.622c.06.241.091.543.091.905,0,.347-.031.649-.091.906h.906q.09.362.09.905Q68.277,88.738,68.187,89.122Z"/><path class="cls-3" d="M79.054,87.311q.089.362.09.905,0,.522-.09.906h-.906q.09.363.09.905,0,.522-.09.906h-4.528q-.091-.384-.091-.906,0-.542.091-.905h-.905q-.091-.384-.091-.906,0-.543.091-.905h-.906c-.061-.257-.09-.559-.09-.906,0-.362.029-.664.09-.905h.906q-.091-.385-.091-.906,0-.543.091-.905h.905q-.091-.385-.091-.906,0-.543.091-.906h4.528q.09.363.09.906,0,.521-.09.906h.906q.089.362.09.905,0,.521-.09.906h-1.812q-.09-.385-.09-.906,0-.543.09-.905h-2.716q.09.362.09.905,0,.521-.09.906h-.906c.06.241.091.543.091.905,0,.347-.031.649-.091.906h.906q.09.362.09.905,0,.522-.09.906h2.716q-.09-.384-.09-.906,0-.543.09-.905H79.054Z"/><path class="cls-3" d="M90.236,84.594q0,.521-.089.906h-1.812q-.091-.385-.091-.906,0-.543.091-.905h-1.585q.091.362.091.905,0,.521-.091.906h-.679c.06.241.091.543.091.905,0,.347-.031.649-.091.906.06.241.091.543.091.905,0,.348-.031.65-.091.906h1.359c.059.242.091.544.091.905,0,.348-.032.65-.091.906h-4.528c-.061-.256-.09-.558-.09-.906,0-.361.029-.663.09-.905h1.358c-.061-.256-.09-.558-.09-.906,0-.362.029-.664.09-.905-.061-.257-.09-.559-.09-.906,0-.362.029-.664.09-.905-.061-.257-.09-.559-.09-.906,0-.362.029-.664.09-.905h-1.358c-.061-.257-.09-.559-.09-.906,0-.362.029-.664.09-.906h2.264q.09.363.09.906,0,.521-.09.906h.905q-.09-.385-.09-.906,0-.543.09-.906h3.396q.091.363.091.906,0,.521-.091.906h.68Q90.236,84.051,90.236,84.594Z"/><path class="cls-3" d="M100.787,87.311h-.679q.09.362.09.905,0,.522-.09.906h-1.132q.091.363.091.905,0,.522-.091.906h-3.622q-.091-.384-.091-.906,0-.542.091-.905h-1.132q-.091-.384-.091-.906,0-.543.091-.905h-.68c-.06-.257-.09-.559-.09-.906,0-.362.03-.664.09-.905h.68q-.091-.385-.091-.906,0-.543.091-.905h1.132q-.091-.385-.091-.906,0-.543.091-.906h3.622q.091.363.091.906,0,.521-.091.906h1.132q.09.362.09.905,0,.521-.09.906h.679q.09.362.09.905Q100.877,86.926,100.787,87.311ZM98.976,87.311q-.091-.385-.091-.906,0-.543.091-.905h-.679q-.091-.385-.091-.906,0-.543.091-.905h-2.265q.091.362.091.905,0,.521-.091.906h-.678c.059.241.09.543.09.905,0,.347-.031.649-.09.906h.678q.091.362.091.905,0,.522-.091.906h2.265q-.091-.384-.091-.906,0-.543.091-.905H98.976Z"/><path class="cls-3" d="M110.159,90.027q0,.522-.09.906h-5.433q-.091-.384-.091-.906,0-.542.091-.905h1.81q-.09-.384-.09-.906,0-.543.09-.905-.09-.385-.09-.906,0-.543.09-.905-.09-.385-.09-.906,0-.543.09-.905-.09-.385-.09-.906,0-.543.09-.906-.09-.384-.09-.905,0-.544.09-.906h-1.358c-.061-.256-.09-.558-.09-.905,0-.363.029-.664.09-.906h3.17c.06.242.091.543.091.906,0,.347-.031.649-.091.905.06.242.091.543.091.906,0,.347-.031.649-.091.905.06.242.091.544.091.906,0,.347-.031.649-.091.906.06.241.091.543.091.905,0,.347-.031.649-.091.906.06.241.091.543.091.905,0,.347-.031.649-.091.906.06.241.091.543.091.905,0,.348-.031.65-.091.906h1.811Q110.159,89.485,110.159,90.027Z"/><path class="cls-3" d="M119.102,90.027q0,.522-.091.906h-5.433q-.091-.384-.091-.906,0-.542.091-.905h1.811q-.091-.384-.091-.906,0-.543.091-.905-.091-.385-.091-.906,0-.543.091-.905-.091-.385-.091-.906,0-.543.091-.905-.091-.385-.091-.906,0-.543.091-.906-.091-.384-.091-.905,0-.544.091-.906h-1.359c-.06-.256-.089-.558-.089-.905,0-.363.029-.664.089-.906h3.17c.06.242.091.543.091.906,0,.347-.031.649-.091.905.06.242.091.543.091.906,0,.347-.031.649-.091.905.06.242.091.544.091.906,0,.347-.031.649-.091.906.06.241.091.543.091.905,0,.347-.031.649-.091.906.06.241.091.543.091.905,0,.347-.031.649-.091.906.06.241.091.543.091.905,0,.348-.031.65-.091.906h1.811Q119.102,89.485,119.102,90.027Z"/><polyline class="cls-2" points="73.425 48.174 89.606 57.596 105.787 48.174"/></g></g></g></svg></div><div class="frame" data-frame="1"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 181.313 153.033"><defs><style>.cls-1{isolation:isolate;}.cls-2{fill:none;stroke:#0000f2;stroke-miterlimit:10;stroke-width:1.725px;}.cls-3{fill:#0000f2;}.cls-4{mix-blend-mode:hard-light;}</style></defs><g class="cls-1"><g id="_레이어_1"><g class="cls-4"><path class="cls-3" d="M68.187,89.122h-.906c.06.242.091.544.091.905,0,.348-.031.65-.091.906h-4.98q-.091-.384-.091-.906,0-.542.091-.905h4.074q-.089-.384-.09-.906,0-.543.09-.905h-3.622c-.061-.257-.09-.559-.09-.906,0-.362.029-.664.09-.905h-.905q-.091-.385-.091-.906,0-.543.091-.905h.905c-.061-.257-.09-.559-.09-.906,0-.362.029-.664.09-.906h4.981q.09.363.09.906,0,.521-.09.906h-4.075q.09.362.09.905,0,.521-.09.906h3.622c.06.241.091.543.091.905,0,.347-.031.649-.091.906h.906q.09.362.09.905Q68.277,88.738,68.187,89.122Z"/><path class="cls-3" d="M79.054,87.311q.089.362.09.905,0,.522-.09.906h-.906q.09.363.09.905,0,.522-.09.906h-4.528q-.091-.384-.091-.906,0-.542.091-.905h-.905q-.091-.384-.091-.906,0-.543.091-.905h-.906c-.061-.257-.09-.559-.09-.906,0-.362.029-.664.09-.905h.906q-.091-.385-.091-.906,0-.543.091-.905h.905q-.091-.385-.091-.906,0-.543.091-.906h4.528q.09.363.09.906,0,.521-.09.906h.906q.089.362.09.905,0,.521-.09.906h-1.812q-.091-.385-.091-.906,0-.543.091-.905h-2.717q.091.362.091.905,0,.521-.091.906h-.905c.06.241.091.543.091.905,0,.347-.031.649-.091.906h.905q.091.362.091.905,0,.522-.091.906h2.717q-.091-.384-.091-.906,0-.543.091-.905H79.054Z"/><path class="cls-3" d="M90.236,84.594q0,.521-.089.906h-1.812q-.091-.385-.091-.906,0-.543.091-.905h-1.585q.091.362.091.905,0,.521-.091.906h-.679c.06.241.091.543.091.905,0,.347-.031.649-.091.906.06.241.091.543.091.905,0,.348-.031.65-.091.906h1.359c.059.242.091.544.091.905,0,.348-.032.65-.091.906h-4.529c-.06-.256-.089-.558-.089-.906,0-.361.029-.663.089-.905h1.359c-.061-.256-.09-.558-.09-.906,0-.362.029-.664.09-.905-.061-.257-.09-.559-.09-.906,0-.362.029-.664.09-.905-.061-.257-.09-.559-.09-.906,0-.362.029-.664.09-.905h-1.359c-.06-.257-.089-.559-.089-.906,0-.362.029-.664.089-.906h2.265q.089.363.09.906,0,.521-.09.906h.905q-.09-.385-.09-.906,0-.543.09-.906h3.396q.091.363.091.906,0,.521-.091.906h.68Q90.236,84.051,90.236,84.594Z"/><path class="cls-3" d="M100.787,87.311h-.679q.09.362.09.905,0,.522-.09.906h-1.132q.091.363.091.905,0,.522-.091.906h-3.622q-.091-.384-.091-.906,0-.542.091-.905h-1.132q-.091-.384-.091-.906,0-.543.091-.905h-.68c-.06-.257-.09-.559-.09-.906,0-.362.03-.664.09-.905h.68q-.091-.385-.091-.906,0-.543.091-.905h1.132q-.091-.385-.091-.906,0-.543.091-.906h3.622q.091.363.091.906,0,.521-.091.906h1.132q.09.362.09.905,0,.521-.09.906h.679q.09.362.09.905Q100.877,86.926,100.787,87.311ZM98.976,87.311q-.091-.385-.091-.906,0-.543.091-.905h-.679q-.091-.385-.091-.906,0-.543.091-.905h-2.265q.091.362.091.905,0,.521-.091.906h-.678c.059.241.09.543.09.905,0,.347-.031.649-.09.906h.678q.091.362.091.905,0,.522-.091.906h2.265q-.091-.384-.091-.906,0-.543.091-.905H98.976Z"/><path class="cls-3" d="M110.159,90.027q0,.522-.091.906h-5.432q-.091-.384-.091-.906,0-.542.091-.905h1.81q-.09-.384-.09-.906,0-.543.09-.905-.09-.385-.09-.906,0-.543.09-.905-.09-.385-.09-.906,0-.543.09-.905-.09-.385-.09-.906,0-.543.09-.906-.09-.384-.09-.905,0-.544.09-.906h-1.358c-.061-.256-.09-.558-.09-.905,0-.363.029-.664.09-.906h3.17c.059.242.091.543.091.906,0,.347-.032.649-.091.905.059.242.091.543.091.906,0,.347-.032.649-.091.905.059.242.091.544.091.906,0,.347-.032.649-.091.906.059.241.091.543.091.905,0,.347-.032.649-.091.906.059.241.091.543.091.905,0,.347-.032.649-.091.906.059.241.091.543.091.905,0,.348-.032.65-.091.906h1.81Q110.159,89.485,110.159,90.027Z"/><path class="cls-3" d="M119.102,90.027q0,.522-.091.906h-5.433q-.091-.384-.091-.906,0-.542.091-.905h1.811q-.091-.384-.091-.906,0-.543.091-.905-.091-.385-.091-.906,0-.543.091-.905-.091-.385-.091-.906,0-.543.091-.905-.091-.385-.091-.906,0-.543.091-.906-.091-.384-.091-.905,0-.544.091-.906h-1.359c-.06-.256-.089-.558-.089-.905,0-.363.029-.664.089-.906h3.17c.06.242.091.543.091.906,0,.347-.031.649-.091.905.06.242.091.543.091.906,0,.347-.031.649-.091.905.06.242.091.544.091.906,0,.347-.031.649-.091.906.06.241.091.543.091.905,0,.347-.031.649-.091.906.06.241.091.543.091.905,0,.347-.031.649-.091.906.06.241.091.543.091.905,0,.348-.031.65-.091.906h1.811Q119.102,89.485,119.102,90.027Z"/><polyline class="cls-2" points="73.425 56.667 89.606 66.089 105.787 56.667"/><polyline class="cls-2" points="73.425 48.174 89.606 57.596 105.787 48.174"/></g></g></g></svg></div><div class="frame" data-frame="2"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 181.313 153.033"><defs><style>.cls-1{isolation:isolate;}.cls-2{fill:none;stroke:#0000f2;stroke-miterlimit:10;stroke-width:1.725px;}.cls-3{fill:#0000f2;}.cls-4{mix-blend-mode:hard-light;}</style></defs><g class="cls-1"><g id="_레이어_1"><g class="cls-4"><path class="cls-3" d="M68.187,89.122h-.905c.059.242.091.544.091.905,0,.348-.032.65-.091.906h-4.981q-.09-.384-.09-.906,0-.542.09-.905h4.075q-.09-.384-.09-.906,0-.543.09-.905h-3.623c-.06-.257-.089-.559-.089-.906,0-.362.029-.664.089-.905h-.905q-.091-.385-.091-.906,0-.543.091-.905h.905c-.06-.257-.089-.559-.089-.906,0-.362.029-.664.089-.906h4.981q.091.363.091.906,0,.521-.091.906h-4.074q.089.362.09.905,0,.521-.09.906h3.622c.059.241.091.543.091.905,0,.347-.032.649-.091.906h.905q.091.362.091.905Q68.278,88.738,68.187,89.122Z"/><path class="cls-3" d="M79.054,87.311q.09.362.09.905,0,.522-.09.906h-.906q.091.363.091.905,0,.522-.091.906h-4.527q-.091-.384-.091-.906,0-.542.091-.905h-.906q-.09-.384-.09-.906,0-.543.09-.905h-.906c-.06-.257-.09-.559-.09-.906,0-.362.03-.664.09-.905h.906q-.09-.385-.09-.906,0-.543.09-.905h.906q-.091-.385-.091-.906,0-.543.091-.906h4.527q.091.363.091.906,0,.521-.091.906h.906q.09.362.09.905,0,.521-.09.906h-1.811q-.091-.385-.091-.906,0-.543.091-.905h-2.717q.091.362.091.905,0,.521-.091.906h-.905c.059.241.09.543.09.905,0,.347-.031.649-.09.906h.905q.091.362.091.905,0,.522-.091.906h2.717q-.091-.384-.091-.906,0-.543.091-.905H79.054Z"/><path class="cls-3" d="M90.237,84.594q0,.521-.09.906h-1.811q-.091-.385-.091-.906,0-.543.091-.905h-1.585q.09.362.09.905,0,.521-.09.906h-.679c.059.241.091.543.091.905,0,.347-.032.649-.091.906.059.241.091.543.091.905,0,.348-.032.65-.091.906h1.358c.06.242.091.544.091.905,0,.348-.031.65-.091.906h-4.528c-.061-.256-.09-.558-.09-.906,0-.361.029-.663.09-.905h1.358c-.06-.256-.09-.558-.09-.906,0-.362.03-.664.09-.905-.06-.257-.09-.559-.09-.906,0-.362.03-.664.09-.905-.06-.257-.09-.559-.09-.906,0-.362.03-.664.09-.905h-1.358c-.061-.257-.09-.559-.09-.906,0-.362.029-.664.09-.906h2.265q.089.363.089.906,0,.521-.089.906h.905q-.091-.385-.091-.906,0-.543.091-.906h3.395q.091.363.091.906,0,.521-.091.906h.68Q90.236,84.051,90.237,84.594Z"/><path class="cls-3" d="M100.788,87.311h-.68q.091.362.091.905,0,.522-.091.906h-1.132q.091.363.091.905,0,.522-.091.906h-3.622q-.091-.384-.091-.906,0-.542.091-.905h-1.132q-.091-.384-.091-.906,0-.543.091-.905h-.679c-.061-.257-.09-.559-.09-.906,0-.362.029-.664.09-.905h.679q-.091-.385-.091-.906,0-.543.091-.905h1.132q-.091-.385-.091-.906,0-.543.091-.906h3.622q.091.363.091.906,0,.521-.091.906h1.132q.091.362.091.905,0,.521-.091.906h.68q.089.362.09.905Q100.878,86.926,100.788,87.311ZM98.976,87.311q-.091-.385-.091-.906,0-.543.091-.905h-.679q-.09-.385-.09-.906,0-.543.09-.905h-2.264q.091.362.091.905,0,.521-.091.906h-.679c.06.241.091.543.091.905,0,.347-.031.649-.091.906h.679q.091.362.091.905,0,.522-.091.906h2.264q-.09-.384-.09-.906,0-.543.09-.905H98.976Z"/><path class="cls-3" d="M110.16,90.027q0,.522-.091.906h-5.433q-.091-.384-.091-.906,0-.542.091-.905h1.811q-.091-.384-.091-.906,0-.543.091-.905-.091-.385-.091-.906,0-.543.091-.905-.091-.385-.091-.906,0-.543.091-.905-.091-.385-.091-.906,0-.543.091-.906-.091-.384-.091-.905,0-.544.091-.906h-1.359c-.06-.256-.089-.558-.089-.905,0-.363.029-.664.089-.906h3.17c.06.242.091.543.091.906,0,.347-.031.649-.091.905.06.242.091.543.091.906,0,.347-.031.649-.091.905.06.242.091.544.091.906,0,.347-.031.649-.091.906.06.241.091.543.091.905,0,.347-.031.649-.091.906.06.241.091.543.091.905,0,.347-.031.649-.091.906.06.241.091.543.091.905,0,.348-.031.65-.091.906h1.811Q110.16,89.485,110.16,90.027Z"/><path class="cls-3" d="M119.102,90.027q0,.522-.091.906h-5.432q-.091-.384-.091-.906,0-.542.091-.905h1.81q-.091-.384-.091-.906,0-.543.091-.905-.091-.385-.091-.906,0-.543.091-.905-.091-.385-.091-.906,0-.543.091-.905-.091-.385-.091-.906,0-.543.091-.906-.091-.384-.091-.905,0-.544.091-.906h-1.358c-.061-.256-.09-.558-.09-.905,0-.363.029-.664.09-.906h3.17c.059.242.091.543.091.906,0,.347-.032.649-.091.905.059.242.091.543.091.906,0,.347-.032.649-.091.905.059.242.091.544.091.906,0,.347-.032.649-.091.906.059.241.091.543.091.905,0,.347-.032.649-.091.906.059.241.091.543.091.905,0,.347-.032.649-.091.906.059.241.091.543.091.905,0,.348-.032.65-.091.906h1.81Q119.102,89.485,119.102,90.027Z"/><polyline class="cls-2" points="73.425 64.84 89.606 74.263 105.787 64.84"/><polyline class="cls-2" points="73.425 56.667 89.606 66.089 105.787 56.667"/><polyline class="cls-2" points="73.425 48.174 89.606 57.596 105.787 48.174"/></g></g></g></svg></div><div class="frame" data-frame="3"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 181.313 153.033"><defs><style>.cls-1{isolation:isolate;}.cls-2{fill:none;stroke:#0000f2;stroke-miterlimit:10;stroke-width:1.725px;}.cls-3{fill:#0000f2;}.cls-4{mix-blend-mode:hard-light;}</style></defs><g class="cls-1"><g id="_레이어_1"><g class="cls-4"><path class="cls-3" d="M68.187,89.122h-.905c.059.242.09.544.09.905,0,.348-.031.65-.09.906h-4.981q-.091-.384-.091-.906,0-.542.091-.905h4.074q-.089-.384-.09-.906,0-.543.09-.905h-3.622c-.06-.257-.09-.559-.09-.906,0-.362.03-.664.09-.905h-.905q-.091-.385-.091-.906,0-.543.091-.905h.905c-.06-.257-.09-.559-.09-.906,0-.362.03-.664.09-.906h4.981q.09.363.09.906,0,.521-.09.906h-4.075q.09.362.09.905,0,.521-.09.906h3.623c.059.241.09.543.09.905,0,.347-.031.649-.09.906h.905q.091.362.091.905Q68.278,88.738,68.187,89.122Z"/><path class="cls-3" d="M79.054,87.311q.089.362.09.905,0,.522-.09.906h-.906q.091.363.091.905,0,.522-.091.906h-4.528q-.09-.384-.09-.906,0-.542.09-.905h-.905q-.091-.384-.091-.906,0-.543.091-.905h-.906c-.061-.257-.09-.559-.09-.906,0-.362.029-.664.09-.905h.906q-.091-.385-.091-.906,0-.543.091-.905h.905q-.09-.385-.09-.906,0-.543.09-.906h4.528q.091.363.091.906,0,.521-.091.906h.906q.089.362.09.905,0,.521-.09.906h-1.812q-.09-.385-.09-.906,0-.543.09-.905h-2.716q.09.362.09.905,0,.521-.09.906h-.906c.06.241.091.543.091.905,0,.347-.031.649-.091.906h.906q.09.362.09.905,0,.522-.09.906h2.716q-.09-.384-.09-.906,0-.543.09-.905H79.054Z"/><path class="cls-3" d="M90.237,84.594q0,.521-.09.906h-1.812q-.091-.385-.091-.906,0-.543.091-.905h-1.585q.091.362.091.905,0,.521-.091.906h-.678c.059.241.09.543.09.905,0,.347-.031.649-.09.906.059.241.09.543.09.905,0,.348-.031.65-.09.906h1.358c.06.242.091.544.091.905,0,.348-.031.65-.091.906h-4.528c-.061-.256-.09-.558-.09-.906,0-.361.029-.663.09-.905h1.358c-.061-.256-.09-.558-.09-.906,0-.362.029-.664.09-.905-.061-.257-.09-.559-.09-.906,0-.362.029-.664.09-.905-.061-.257-.09-.559-.09-.906,0-.362.029-.664.09-.905h-1.358c-.061-.257-.09-.559-.09-.906,0-.362.029-.664.09-.906h2.264q.09.363.09.906,0,.521-.09.906h.906q-.091-.385-.091-.906,0-.543.091-.906h3.395q.091.363.091.906,0,.521-.091.906h.68Q90.236,84.051,90.237,84.594Z"/><path class="cls-3" d="M100.787,87.311h-.679q.091.362.091.905,0,.522-.091.906h-1.132q.091.363.091.905,0,.522-.091.906h-3.622q-.091-.384-.091-.906,0-.542.091-.905h-1.132q-.091-.384-.091-.906,0-.543.091-.905h-.68c-.06-.257-.09-.559-.09-.906,0-.362.03-.664.09-.905h.68q-.091-.385-.091-.906,0-.543.091-.905h1.132q-.091-.385-.091-.906,0-.543.091-.906h3.622q.091.363.091.906,0,.521-.091.906h1.132q.091.362.091.905,0,.521-.091.906h.679q.09.362.09.905Q100.877,86.926,100.787,87.311ZM98.976,87.311q-.091-.385-.091-.906,0-.543.091-.905h-.679q-.091-.385-.091-.906,0-.543.091-.905h-2.265q.091.362.091.905,0,.521-.091.906h-.678c.059.241.091.543.091.905,0,.347-.032.649-.091.906h.678q.091.362.091.905,0,.522-.091.906h2.265q-.091-.384-.091-.906,0-.543.091-.905H98.976Z"/><path class="cls-3" d="M110.159,90.027q0,.522-.09.906h-5.433q-.091-.384-.091-.906,0-.542.091-.905h1.811q-.091-.384-.091-.906,0-.543.091-.905-.091-.385-.091-.906,0-.543.091-.905-.091-.385-.091-.906,0-.543.091-.905-.091-.385-.091-.906,0-.543.091-.906-.091-.384-.091-.905,0-.544.091-.906h-1.359c-.06-.256-.09-.558-.09-.905,0-.363.03-.664.09-.906h3.17c.06.242.091.543.091.906,0,.347-.031.649-.091.905.06.242.091.543.091.906,0,.347-.031.649-.091.905.06.242.091.544.091.906,0,.347-.031.649-.091.906.06.241.091.543.091.905,0,.347-.031.649-.091.906.06.241.091.543.091.905,0,.347-.031.649-.091.906.06.241.091.543.091.905,0,.348-.031.65-.091.906h1.811Q110.159,89.485,110.159,90.027Z"/><path class="cls-3" d="M119.102,90.027q0,.522-.091.906h-5.433q-.09-.384-.09-.906,0-.542.09-.905h1.811q-.091-.384-.091-.906,0-.543.091-.905-.091-.385-.091-.906,0-.543.091-.905-.091-.385-.091-.906,0-.543.091-.905-.091-.385-.091-.906,0-.543.091-.906-.091-.384-.091-.905,0-.544.091-.906h-1.358c-.061-.256-.09-.558-.09-.905,0-.363.029-.664.09-.906h3.169c.06.242.091.543.091.906,0,.347-.031.649-.091.905.06.242.091.543.091.906,0,.347-.031.649-.091.905.06.242.091.544.091.906,0,.347-.031.649-.091.906.06.241.091.543.091.905,0,.347-.031.649-.091.906.06.241.091.543.091.905,0,.347-.031.649-.091.906.06.241.091.543.091.905,0,.348-.031.65-.091.906h1.811Q119.102,89.485,119.102,90.027Z"/><polyline class="cls-2" points="73.425 64.84 89.606 74.263 105.787 64.84"/><polyline class="cls-2" points="73.425 56.667 89.606 66.089 105.787 56.667"/></g></g></g></svg></div>
+</div>
+</div></section>
+<!-- 확대 리더보드 -->
+<div id="rankOverlay">
+
+  <button id="rankClose" type="button">×</button>
+
+  <div id="rankStage">
+
+    <img
+      id="rankPaper"
+      src="06-08-dynamic.svg"
+      alt="Leaderboard"
+    >
+
+    <div id="rankLines"></div>
+
+    <!-- 화면에는 표시하지 않고 코드만 보관 -->
+  <input id="rankCode" type="hidden">
+  <div id="rankStatus" style="display:none"></div>
+
+  </div>
+</div>
+<script>
+const scroll=document.querySelector('#scroll');
+const scene=document.querySelector('#scene');
+const group=document.querySelector('#group');
+const front=document.querySelector('#front');
+const back=document.querySelector('#back');
+const leader=document.querySelector('#leader');
+const leaderClickHint=document.querySelector('#leaderClickHint');
+const hinge=document.querySelector('#hinge');
+const dark=document.querySelector('#dark');
+const hint=document.querySelector('#hint');
+
+(() => {
+  const frames = [...hint.querySelectorAll('.frame')];
+
+  // 17 → 18 → 19 → 20 → 17 → 18 → 19 → 20 반복
+  const order = [0, 1, 2, 3];
+  let step = 0;
+
+  let previousIndex = null;
+
+  function showFrame(index, showAfterimage = true) {
+    const isLoopRestart = previousIndex === order.at(-1) && index === order[0];
+
+    frames.forEach((frame, frameIndex) => {
+      frame.classList.remove('active', 'ghost');
+      const showImmediately = isLoopRestart && frameIndex === index;
+      frame.classList.toggle('skip-transition', !showAfterimage || showImmediately);
+    });
+
+    if (showAfterimage && previousIndex !== null && previousIndex !== index) {
+      frames[previousIndex].classList.add('ghost');
+    }
+
+    frames[index].classList.add('active');
+    previousIndex = index;
+  }
+
+  showFrame(order[0]);
+
+  const FRAME_DELAY = 200;
+  const HOLD_FRAME_DELAY = 800;
+
+  function playLoop() {
+    step = (step + 1) % order.length;
+    const isHoldFrame = order[step] === 2; // 19
+    showFrame(order[step], !isHoldFrame);
+    setTimeout(playLoop, isHoldFrame ? HOLD_FRAME_DELAY : FRAME_DELAY);
+  }
+
+  function scheduleIndicator() {
+    setTimeout(() => {
+      hint.classList.add('visible');
+      setTimeout(playLoop, FRAME_DELAY);
+    }, 650);
+  }
+
+  if (window.parent === window) {
+    if (document.readyState === 'complete') scheduleIndicator();
+    else window.addEventListener('load', scheduleIndicator, { once: true });
+  } else {
+    function onSceneVisible(event) {
+      if (event.source !== window.parent || event.data?.type !== 'EFFORT_SCENE_VISIBLE') return;
+      window.removeEventListener('message', onSceneVisible);
+      scheduleIndicator();
+    }
+
+    window.addEventListener('message', onSceneVisible);
+  }
+})();
+const clamp=v=>Math.min(1,Math.max(0,v));
+const smooth=v=>{v=clamp(v);return v*v*(3-2*v)};
+const ease=v=>{v=clamp(v);return v<.5?4*v*v*v:1-Math.pow(-2*v+2,3)/2};
+
+// 위치/속도 조절값 — 처음 닫힌 상태는 화면 정중앙
+const TUNE={
+  startX:0,
+  endX:190,            // 열릴 때 전체가 오른쪽으로 밀리는 거리 (px)
+  startY:0,
+  endY:0,
+  flipStart:.13,       // 스크롤 진행에서 열리기 시작
+  flipEnd:.86,         // 완전히 열리는 지점
+  darkMax:.50          // 최종 배경 어두움 (0~1)
+};
+function scale(){
+  const scale=Math.max(innerWidth/1366,innerHeight/768);
+  scene.style.setProperty('--scale',scale);
+}
+window.addEventListener('resize',scale);scale();
+let shown=0;
+let rankOpened = false;
+let slideStarted = false;
+
+function canOpenRanks() {
+  return shown >= TUNE.flipEnd && !rankOpened && !slideStarted;
+}
+let coverSoundPlayed = false;
+function draw(p){
+  if (p > TUNE.flipStart && !coverSoundPlayed) {
+    coverSoundPlayed = true;
+    window.projectSounds?.play('folder');
+  } else if (p <= TUNE.flipStart - 0.03) {
+    coverSoundPlayed = false;
+  }
+
+  const t=ease((p-TUNE.flipStart)/(TUNE.flipEnd-TUNE.flipStart));
+  const x=TUNE.startX+(TUNE.endX-TUNE.startX)*smooth(t);
+  const y=TUNE.startY+(TUNE.endY-TUNE.startY)*smooth(t);
+  group.style.transform=`translate3d(${x}px,${y}px,0)`;
+  dark.style.opacity=smooth(t)*TUNE.darkMax;
+  // 다음 페이지가 닫힌 앞표지 뒤에서 먼저 보이지 않도록 시작할 땐 숨긴다.
+  leader.style.opacity=1;
+  const canMovePaper = !rankOpened && document.querySelector("#slidePaper.active:not(.moveRight)") !== null;
+  leaderClickHint.classList.toggle("visible", canOpenRanks() || canMovePaper);
+  hinge.style.opacity=Math.sin(t*Math.PI)*.6;
+  if (t <= .5) {
+  const u = smooth(t * 2);
+
+  front.style.visibility = 'visible';
+  back.style.visibility = 'hidden';
+
+  front.style.transform = `rotateY(${-89.9 * u}deg)`;
+
+} else {
+  const u = smooth((t - .5) * 2);
+
+  front.style.visibility = 'hidden';
+  back.style.visibility = 'visible';
+
+  // 앞면의 -90도에서 이어서 -180도까지 회전
+  back.style.transform =
+  `translateZ(0px) rotateY(${-90 - 90*u}deg)`;
+}
+  hint.style.opacity=1-smooth(p/.07);
+}
+function animate(){
+  const usable=Math.max(1,scroll.offsetHeight-innerHeight);
+  const target=clamp(-scroll.getBoundingClientRect().top/usable);
+  shown+=(target-shown)*.18;
+  draw(shown);
+  requestAnimationFrame(animate);
+}
+draw(0);animate();
+
+/* ===== 리더보드 + Supabase ===== */
+
+// 게임 HTML에 사용했던 주소와 공개 키
+const SUPABASE_URL = 'https://vulpizivyyxsfwnbhsnr.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY =
+  'sb_publishable_E7og2HYdBat7egSfzdUmGg_16175d4P';
+
+const rankOverlay = document.getElementById('rankOverlay');
+const rankStage = document.getElementById('rankStage');
+const rankLines = document.getElementById('rankLines');
+const rankStatus = document.getElementById('rankStatus');
+const rankCode = document.getElementById('rankCode');
+
+
+// 화면 크기에 맞게 확대 크기 조정
+function resizeRank() {
+  const value = Math.min(
+    innerWidth / 1366,
+    innerHeight / 1030,
+    1.4
+  );
+
+  rankStage.style.setProperty('--boardScale', value);
+}
+
+window.addEventListener('resize', resizeRank);
+resizeRank();
+
+// 보여줄 순위 선택
+function visibleRanks(total, myRank) {
+  if (total <= 10) {
+    return Array.from({length:total}, (_,i) => i+1);
+  }
+
+  const selected = new Set([
+    1,2,3,4,
+    total-3,total-2,total-1,total
+  ]);
+
+  if (myRank >= 1 && myRank <= total) {
+    selected.add(myRank);
+  }
+
+  return [...selected]
+    .filter(n => n >= 1 && n <= total)
+    .sort((a,b) => a-b);
+}
+
+// 순위표 그리기
+function renderRanks(data) {
+  rankLines.replaceChildren();
+
+  if (!data.length) {
+    rankStatus.textContent = 'NO RECORDS YET';
+    return;
+  }
+
+  const mine = data.find(row => row.is_you);
+  const selected = new Set(
+    visibleRanks(data.length, mine?.rank)
+  );
+
+  const display = [];
+  let last = 0;
+
+  for (const item of data) {
+    if (!selected.has(item.rank)) continue;
+
+    if (last && item.rank > last + 1) {
+      display.push({gap:true});
+    }
+
+    display.push(item);
+    last = item.rank;
+  }
+
+  const spacing = Math.min(
+    57,
+    680 / Math.max(1,display.length)
+  );
+
+  display.forEach((item,i) => {
+    const line = document.createElement('div');
+
+    line.className = 'rankLine'
+      + (item.is_you ? ' you' : '')
+      + (item.gap ? ' gap' : '');
+
+    line.style.top = (205 + i*spacing) + 'px';
+
+    const values = item.gap
+      ? ['···','','','','','','']
+      : [
+          item.rank,
+          item.is_you ? 'YOU' : 'PLAYER ' + item.rank,
+          item.clicks,
+          item.starting,
+          Number(item.efficiency).toFixed(2),
+          '60s',
+          '+' + item.positive_events
+            + ' / -' + item.negative_events
+        ];
+
+    values.forEach(value => {
+      const span = document.createElement('span');
+      span.textContent = String(value ?? '');
+      line.appendChild(span);
+    });
+
+    rankLines.appendChild(line);
+  });
+
+  rankStatus.textContent =
+    'TOTAL ' + data.length + ' PLAYERS'
+    + (mine
+      ? ' · YOUR RANK #' + mine.rank
+      : ' · ENTER YOUR CODE');
+}
+
+// Supabase에서 기록 조회
+async function loadRanks() {
+  const code = rankCode.value.trim().toUpperCase();
+  rankCode.value = code;
+
+  if (
+    !SUPABASE_URL.startsWith('https://') ||
+    SUPABASE_PUBLISHABLE_KEY.startsWith('PASTE_')
+  ) {
+    rankStatus.textContent =
+      'SUPABASE URL / KEY NOT SET';
+    return;
+  }
+
+  rankStatus.textContent = 'LOADING...';
+
+  try {
+    const response = await fetch(
+      SUPABASE_URL.replace(/\/$/, '')
+        + '/rest/v1/rpc/get_public_leaderboard',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_PUBLISHABLE_KEY,
+          'Authorization':
+            'Bearer ' + SUPABASE_PUBLISHABLE_KEY
+        },
+        body: JSON.stringify({
+          p_access_code: code || null
+        })
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
+
+    const data = await response.json();
+
+    if (!Array.isArray(data)) {
+      throw new Error('Invalid leaderboard data');
+    }
+
+    renderRanks(data);
+
+  } catch (error) {
+    console.error(error);
+    rankStatus.textContent =
+      'LOAD FAILED — CHECK SUPABASE';
+  }
+}
+
+function openRanks() {
+  if (!canOpenRanks()) return;
+
+  rankOpened = true;
+  leaderClickHint.classList.remove("visible");
+  rankOverlay.classList.add('open');
+
+  const savedCode =
+    sessionStorage.getItem('presto_leaderboard_code') || '';
+
+  rankCode.value = savedCode.trim().toUpperCase();
+  loadRanks();
+
+}
+
+
+function closeRanks() {
+  if (!rankOpened) return;
+
+  rankOpened = false;
+
+  if (slideStarted) return;
+  slideStarted = true;
+
+  const slidePaper = document.getElementById('slidePaper');
+
+  // 확대 리더보드가 보이는 동안 종이 준비
+  const nextImage = new Image();
+  nextImage.src = '07-09.svg';
+
+  nextImage.decode().then(() => {
+
+    // 준비된 이미지로 교체
+    leader.src = nextImage.src;
+    leader.classList.add('afterClose');
+
+    // 07-12 종이 등장
+    slidePaper.classList.add('active');
+
+    // 그 다음 확대 화면 닫기
+    rankOverlay.classList.remove('open');
+
+  }).catch(error => {
+    console.error('이미지 로딩 실패', error);
+    slidePaper.classList.add('active');
+    rankOverlay.classList.remove('open');
+  });
+}
+
+// 폴더가 열린 상태에서만 클릭 가능
+leader.addEventListener('click', openRanks);
+
+document.getElementById('rankClose')
+  .addEventListener('click', closeRanks);
+
+
+
+rankCode.addEventListener('keydown', e => {
+  if (e.key === 'Enter') loadRanks();
+});
+
+window.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeRanks();
+});
+// 07-12 종이를 클릭하면 오른쪽으로 이동
+
+
+/* 종이를 클릭하면 오른쪽으로 이동 */
+let readyForNextPage = false;
+let nextPageStarted = false;
+let scrollUnlockTime = 0;
+
+slidePaper.addEventListener('click', () => {
+  if (!slidePaper.classList.contains('active')) return;
+  if (slidePaper.classList.contains('moveRight')) return;
+
+  slidePaper.classList.add('moveRight');
+  slidePaper.style.pointerEvents = 'none';
+
+  // 종이가 오른쪽으로 완전히 이동할 때까지 기다림
+  slidePaper.addEventListener('transitionend', (e) => {
+    if (e.propertyName !== 'transform') return;
+
+    readyForNextPage = true;
+
+    // 이전 스크롤 관성 입력 방지
+    scrollUnlockTime = performance.now() + 700;
+
+  }, { once: true });
+});
+
+
+/* 아래로 스크롤하면 03 페이지로 이동 */
+window.addEventListener('wheel', (e) => {
+  if (e.deltaY <= 0) return;
+  if (!readyForNextPage || nextPageStarted) return;
+  if (performance.now() < scrollUnlockTime) return;
+
+  nextPageStarted = true;
+
+  if (window.parent !== window) {
+    window.parent.postMessage(
+      { type: 'NEXT_PAGE' },
+      '*'
+    );
+  } else {
+    window.location.href = '03_blink.html';
+  }
+
+}, { passive: true });
+
+
+
+
+window.installProjectScrollHint(() => readyForNextPage && !nextPageStarted && performance.now() >= scrollUnlockTime);
+</script></body></html>

@@ -1,0 +1,839 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<title>PRESTO — EFFORT</title>
+
+<style>
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    background: #000;
+    overflow: hidden;
+  }
+
+  #pageFrame {
+    position: fixed;
+    inset: 0;
+
+    width: 100%;
+    height: 100%;
+
+    border: 0;
+    background: #000;
+  }
+
+  #blink {
+    position: fixed;
+    inset: -2px;
+
+    z-index: 9999;
+
+    pointer-events: none;
+    visibility: hidden;
+    overflow: hidden;
+  }
+
+  #blink svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+</style>
+<script src="assets/project-sounds.js"></script>
+</head>
+
+
+<body>
+
+
+<iframe
+  id="pageFrame"
+  src="pages/01_presto.html"
+  title="Interactive scene"
+></iframe>
+
+
+<div id="blink" aria-hidden="true">
+
+  <svg
+    viewBox="0 0 1000 600"
+    preserveAspectRatio="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+
+    <defs>
+
+      <filter
+        id="edgeBlur"
+        x="-20%"
+        y="-30%"
+        width="140%"
+        height="160%"
+      >
+
+        <feGaussianBlur stdDeviation="17" />
+
+      </filter>
+
+    </defs>
+
+
+    <path
+      id="lidTop"
+      fill="black"
+      filter="url(#edgeBlur)"
+    />
+
+
+    <path
+      id="lidBottom"
+      fill="black"
+      filter="url(#edgeBlur)"
+    />
+<rect
+  id="topCover"
+  x="-60"
+  y="-60"
+  width="1120"
+  height="60"
+  fill="black"
+/>
+
+<rect
+  id="bottomCover"
+  x="-60"
+  y="600"
+  width="1120"
+  height="60"
+  fill="black"
+/>
+  </svg>
+
+</div>
+
+
+
+<script>
+
+
+/* =========================================
+   페이지 순서
+   ========================================= */
+
+const PAGES = [
+
+  'pages/01_presto.html',
+
+  'pages/02_effort.html',
+
+  'pages/03_blink.html',
+
+  'pages/04_efficiency.html',
+
+  'pages/04_transition.html',
+
+  'pages/05_starting.html',
+
+  'pages/06_time_limit.html',
+
+  'pages/06_after_time.html',
+
+  'pages/07_luck.html',
+
+  'pages/08_scroll_notes.html',
+
+  'pages/09_grit.html',
+
+  'pages/10_sequence.html',
+
+  'pages/11_stack.html',
+
+  'pages/11.5.html',
+
+  'pages/12_leaderboard.html',
+
+  'pages/13.html',
+
+  'pages/14_drag_redline.html'
+
+];
+
+
+
+const frame =
+  document.getElementById(
+    'pageFrame'
+  );
+
+
+const blink =
+  document.getElementById(
+    'blink'
+  );
+
+
+const lidTop =
+  document.getElementById(
+    'lidTop'
+  );
+
+
+const lidBottom =
+  document.getElementById(
+    'lidBottom'
+  );
+
+
+
+let currentPage = 0;
+
+frame.src =
+  PAGES[currentPage];
+
+
+let busy = false;
+
+
+
+const CLOSE_MS = 850;
+const HOLD_MS = 200;
+const OPEN_MS = 950;
+
+
+
+const pause =
+  ms =>
+    new Promise(
+      resolve =>
+        setTimeout(
+          resolve,
+          ms
+        )
+    );
+
+
+
+/* =========================================
+   눈 깜박임 모양
+   ========================================= */
+
+function drawEye(p) {
+
+  p = Math.max(0, Math.min(1, p));
+
+  const edge = 300 * p;
+
+  const curve =
+    190 * Math.sin(Math.PI * p);
+
+  const bottom =
+    600 - edge;
+
+  const fade =
+    Math.min(
+      1,
+      Math.max(
+        0,
+        p / 0.12
+      )
+    );
+
+
+  lidTop.setAttribute(
+    "d",
+    `M-100 -100
+     H1100
+     V${edge}
+     Q500 ${edge + curve} -100 ${edge}
+     Z`
+  );
+
+
+  lidBottom.setAttribute(
+    "d",
+    `M-100 700
+     H1100
+     V${bottom}
+     Q500 ${bottom - curve} -100 ${bottom}
+     Z`
+  );
+
+
+  for (const el of [
+    lidTop,
+    lidBottom,
+    document.getElementById("topCover"),
+    document.getElementById("bottomCover")
+  ]) {
+    el.style.opacity = fade;
+  }
+
+
+  document
+    .getElementById("topCover")
+    .setAttribute(
+      "height",
+      String(
+        60 +
+        Math.max(
+          0,
+          edge - 60
+        )
+      )
+    );
+
+
+  document
+    .getElementById("bottomCover")
+    .setAttribute(
+      "y",
+      String(
+        Math.min(
+          600,
+          bottom + 60
+        )
+      )
+    );
+
+
+  document
+    .getElementById("bottomCover")
+    .setAttribute(
+      "height",
+      String(
+        660 -
+        Math.min(
+          600,
+          bottom + 60
+        )
+      )
+    );
+
+
+  blink.style.backgroundColor =
+    p >= 0.985
+      ? "#000"
+      : "transparent";
+}
+
+
+
+
+/* =========================================
+   눈 애니메이션
+   ========================================= */
+
+function eye(from, to, duration) {
+  if (from === 0 && to === 1) window.projectSounds?.play('blink');
+
+  return new Promise(resolve => {
+
+    const start =
+      performance.now();
+
+    function tick(now) {
+
+      const t =
+        Math.min(
+          1,
+          (now - start) / duration
+        );
+
+      const eased =
+        t * t * (3 - 2 * t);
+
+      drawEye(
+        from +
+        (to - from) *
+        eased
+      );
+
+      if (t < 1) {
+
+        requestAnimationFrame(tick);
+
+      } else {
+
+        resolve();
+      }
+    }
+
+    requestAnimationFrame(tick);
+
+  });
+}
+
+
+
+/* =========================================
+   iframe 페이지 로드
+   ========================================= */
+
+function loadScene(url){
+
+  return new Promise(
+    resolve => {
+
+      frame.addEventListener(
+
+        'load',
+
+        resolve,
+
+        {
+          once:true
+        }
+
+      );
+
+
+      frame.src =
+        url;
+
+    }
+  );
+
+}
+
+
+
+/* =========================================
+   다음 페이지 이동
+   ========================================= */
+
+async function goTo(index){
+
+  if(
+    busy ||
+    index < 0 ||
+    index >= PAGES.length ||
+    index === currentPage
+  ){
+    return;
+  }
+
+
+  const fromPage = PAGES[currentPage];
+  const toPage = PAGES[index];
+  const enteringStack = fromPage === 'pages/10_sequence.html' && toPage === 'pages/11_stack.html';
+  const useShortBlink =
+    enteringStack || (fromPage === 'pages/11_stack.html' && toPage === 'pages/11.5.html');
+  const blinkCloseMs = useShortBlink ? 550 : CLOSE_MS;
+  const blinkHoldMs = (useShortBlink ? 150 : HOLD_MS) + (enteringStack ? 1000 : 0);
+  const blinkOpenMs = useShortBlink ? 550 : OPEN_MS;
+
+  busy = true;
+
+
+  blink.style.visibility =
+    'visible';
+
+
+  try{
+
+    await eye(
+      0,
+      1,
+      blinkCloseMs
+    );
+
+
+    await loadScene(
+      PAGES[index]
+    );
+
+
+    currentPage =
+      index;
+
+
+    await pause(blinkHoldMs);
+
+
+    await eye(
+      1,
+      0,
+      blinkOpenMs
+    );
+
+
+  }finally{
+
+    blink.style.visibility =
+      'hidden';
+
+
+    blink.style.backgroundColor =
+      'transparent';
+
+
+    busy =
+      false;
+
+  }
+
+  if (PAGES[index] === 'pages/02_effort.html') {
+    frame.contentWindow.postMessage({ type: 'EFFORT_SCENE_VISIBLE' }, '*');
+  }
+
+  if (toPage === 'pages/06_time_limit.html') {
+    frame.contentWindow.postMessage({ type: 'CLOCK_SCENE_VISIBLE' }, window.location.origin);
+  }
+
+  if (toPage === 'pages/10_sequence.html') {
+    frame.contentWindow.postMessage({ type: 'SEQUENCE_SCENE_VISIBLE' }, window.location.origin);
+  }
+
+}
+
+
+
+
+/* =========================================
+   각 페이지에서 보내는 메시지 받기
+
+   parent.postMessage({
+     type:'NEXT_PAGE'
+   }, '*');
+
+   ========================================= */
+
+window.addEventListener(
+
+  'message',
+
+  event => {
+
+
+    if(
+      event.source !==
+      frame.contentWindow
+    ){
+      return;
+    }
+
+
+    if(busy){
+      return;
+    }
+
+
+    const type =
+      event.data?.type;
+
+
+
+    if(
+      type ===
+      'INTERNAL_BLINK'
+    ){
+
+      internalBlink();
+
+      return;
+
+    }
+
+
+
+    if(
+      type ===
+      'NEXT_PAGE'
+    ){
+
+      /*
+        05 → 06은
+        아래 별도 스크롤 코드가 담당
+      */
+
+      if(
+        currentPage === 5
+      ){
+        return;
+      }
+
+
+      goTo(
+        currentPage + 1
+      );
+
+
+      return;
+
+    }
+
+
+
+    if(
+      type ===
+      'PREV_PAGE'
+    ){
+
+      goTo(
+        currentPage - 1
+      );
+
+    }
+
+  }
+
+);
+
+
+
+/* =========================================
+   iframe 안에서 화면만 바꾸는 깜박임
+   ========================================= */
+
+async function internalBlink(){
+
+  if(busy){
+    return;
+  }
+
+
+  busy = true;
+
+
+  blink.style.visibility =
+    'visible';
+
+
+  try{
+
+
+    await eye(
+      0,
+      1,
+      CLOSE_MS
+    );
+
+
+    frame
+      .contentWindow
+      .postMessage(
+
+        {
+          type:
+            'BLINK_CLOSED'
+        },
+
+        window.location.origin
+
+      );
+
+
+    await pause(
+      HOLD_MS
+    );
+
+
+    await eye(
+      1,
+      0,
+      OPEN_MS
+    );
+
+
+    frame
+      .contentWindow
+      .postMessage(
+
+        {
+          type:
+            'BLINK_DONE'
+        },
+
+        window.location.origin
+
+      );
+
+
+  }finally{
+
+
+    blink.style.visibility =
+      'hidden';
+
+
+    blink.style.backgroundColor =
+      'transparent';
+
+
+    busy =
+      false;
+
+  }
+
+}
+
+
+
+/* =========================================
+   03 → 04 전환 후
+   남아있는 스크롤 입력 차단
+   ========================================= */
+
+frame.addEventListener(
+
+  'load',
+
+  () => {
+
+
+    if(
+      !frame.src.endsWith(
+        '/pages/04_efficiency.html'
+      )
+    ){
+      return;
+    }
+
+
+    const pageDocument =
+      frame.contentDocument;
+
+
+    if(
+      !pageDocument
+    ){
+      return;
+    }
+
+
+    const scrollUnlockTime =
+      performance.now() +
+      1500;
+
+
+    pageDocument.addEventListener(
+
+      'wheel',
+
+      event => {
+
+
+        if(
+          performance.now() <
+          scrollUnlockTime
+        ){
+
+          event.preventDefault();
+
+          event.stopPropagation();
+
+        }
+
+      },
+
+      {
+        passive:false,
+        capture:true
+      }
+
+    );
+
+  }
+
+);
+
+
+
+/* =========================================
+   05 → 06
+   스크롤하면 눈 깜박임 전환
+   ========================================= */
+
+frame.addEventListener(
+
+  'load',
+
+  () => {
+
+
+    if(
+      !frame.src.endsWith(
+        '/pages/05_starting.html'
+      )
+    ){
+      return;
+    }
+
+
+    const pageDocument =
+      frame.contentDocument;
+
+
+    if(
+      !pageDocument
+    ){
+      return;
+    }
+
+
+    let transitioned =
+      false;
+
+
+    pageDocument.addEventListener(
+
+      'wheel',
+
+      event => {
+
+
+        if(
+          event.deltaY <= 0
+        ){
+          return;
+        }
+
+
+        if (
+          transitioned ||
+          busy ||
+          currentPage !== 5 ||
+          pageDocument.documentElement.dataset.blinkDone !== 'true'
+        ) {
+          return;
+        }
+
+
+        transitioned =
+          true;
+
+
+        event.preventDefault();
+
+
+        delete pageDocument.documentElement.dataset.blinkDone;
+        goTo(6);
+
+      },
+
+      {
+        passive:false,
+        capture:true
+      }
+
+    );
+
+  }
+
+);
+
+
+</script>
+
+
+</body>
+</html>

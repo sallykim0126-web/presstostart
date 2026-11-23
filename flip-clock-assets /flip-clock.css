@@ -1,0 +1,87 @@
+/* 0RPRESS — FLIP CLOCK / all styling is scoped to #opflip-time-limit */
+/* 06 페이지 전체 배경 */
+html,
+body {
+  background: url("./12-17.svg")
+    center center / cover no-repeat fixed !important;
+}
+
+#opflip-time-limit{box-sizing:border-box;display:block;width:100%;max-width:1440px;margin:0 auto;padding:26px 18px 30px;background:#090909;color:#f3f3f3;font-family:Arial,system-ui,sans-serif}
+#opflip-time-limit *{box-sizing:border-box}
+#opflip-time-limit .opflip-topline{display:flex;justify-content:space-between;gap:24px;align-items:center;color:#999;font-size:11px;letter-spacing:.16em;padding:8px 2px}
+#opflip-time-limit .opflip-topline strong{color:#f3f3f3;font-weight:500}
+#opflip-time-limit .opflip-viewport{width:100%;aspect-ratio:16/9;position:relative;overflow:hidden;background:#090909}
+
+#opflip-time-limit .opflip-stage {
+  position: absolute;
+  width: 1920px;
+  height: 1080px;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+  background: transparent;
+}
+
+#opflip-time-limit .opflip-bg,#opflip-time-limit .opflip-line{position:absolute;display:block;inset:0;width:1920px;height:1080px;pointer-events:none;user-select:none}
+#opflip-time-limit .opflip-bg{z-index:1}
+#opflip-time-limit .opflip-line{z-index:8;opacity:.96}
+#opflip-time-limit .opflip-card{position:absolute;z-index:4;perspective:1150px;transform-style:preserve-3d}
+#opflip-time-limit .opflip-half{position:absolute;left:0;width:100%;height:50%;overflow:hidden;backface-visibility:hidden;transform-style:preserve-3d}
+#opflip-time-limit .opflip-half.top{top:0;transform-origin:center bottom}
+#opflip-time-limit .opflip-half.bottom{bottom:0;transform-origin:center top}
+#opflip-time-limit .opflip-half.front{z-index:7;filter:drop-shadow(0 0 1px #000)}
+#opflip-time-limit .opflip-half.back{z-index:6;visibility:hidden}
+#opflip-time-limit .opflip-half.stationary{z-index:3}
+#opflip-time-limit .opflip-plate-art{position:absolute;width:1920px;height:1080px;max-width:none;pointer-events:none;user-select:none;z-index:1;display:block}
+#opflip-time-limit .opflip-plate-bottom{position:absolute;width:100%;height:100%;left:0;top:0;pointer-events:none;display:block;z-index:1}
+#opflip-time-limit .opflip-digit-svg{z-index:2;position:absolute;width:1920px;height:1080px;left:var(--offset-x);top:var(--offset-y);overflow:visible;pointer-events:none}
+#opflip-time-limit .opflip-half.front::after{content:"";position:absolute;inset:0;z-index:4;background:linear-gradient(0deg,rgba(0,0,0,.52),transparent 65%);pointer-events:none}
+#opflip-time-limit .opflip-half.front::before{content:"";position:absolute;z-index:3;bottom:0;left:0;right:0;height:2px;background:#080808;opacity:.78;pointer-events:none}
+#opflip-time-limit .opflip-half.back::after{content:"";position:absolute;inset:0;z-index:4;background:linear-gradient(180deg,rgba(0,0,0,.40),transparent 65%);pointer-events:none}
+#opflip-time-limit .opflip-half.back::before{content:"";position:absolute;z-index:3;top:0;left:0;right:0;height:2px;background:#111;opacity:.9;pointer-events:none}
+@keyframes opflipOut{0%{transform:rotateX(0deg);filter:brightness(1)}100%{transform:rotateX(-89.8deg);filter:brightness(.4)}}
+@keyframes opflipIn{0%{transform:rotateX(89.8deg);filter:brightness(.5)}100%{transform:rotateX(0deg);filter:brightness(1)}}
+#opflip-time-limit .opflip-controls{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:12px}
+#opflip-time-limit .opflip-btn{cursor:pointer;border:1px solid #3b3b3b;border-radius:3px;background:#171717;color:#f5f5f5;padding:9px 14px;font-size:12px;letter-spacing:.05em}
+#opflip-time-limit .opflip-btn:hover{background:#303030}
+#opflip-time-limit .opflip-btn:disabled{opacity:.45;cursor:default}
+#opflip-time-limit .opflip-label{font-variant-numeric:tabular-nums;letter-spacing:.1em;color:#999;font-size:12px;min-width:70px;text-align:right}
+@media(max-width:640px){#opflip-time-limit{padding:12px 6px}#opflip-time-limit .opflip-topline{font-size:9px;letter-spacing:.08em}}
+#opflip-time-limit .opflip-plate-bottom {
+  display: none !important;
+}
+/* 플립 카드 위 반투명 막 제거 */
+#opflip-time-limit .opflip-half.front::after,
+#opflip-time-limit .opflip-half.back::after {
+  display: none !important;
+}
+
+/* CSS로 추가된 중복 경계선 제거 */
+#opflip-time-limit .opflip-half.front::before,
+#opflip-time-limit .opflip-half.back::before {
+  display: none !important;
+}
+
+/* 이전에 만든 하단 이미지 중복 방지 */
+#opflip-time-limit .opflip-plate-bottom {
+  display: none !important;
+}
+
+
+/* ===================================
+   06 배경 전체 화면 + 시계 위치 조절
+=================================== */
+
+
+
+/* 기존 검은 배경 제거 */
+#opflip-time-limit,
+#opflip-time-limit .opflip-viewport {
+  background: transparent !important;
+}
+
+/* 시계 전체 크기 및 위치 조절 */
+#opflip-time-limit .opflip-stage {
+  scale: 1.21;
+  translate: -165px -100px;
+}
