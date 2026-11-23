@@ -298,7 +298,8 @@ html, body {
         <div id="paper">
           <img
   class="folder-svg"
-  src="../assets/32-03.png"
+  data-src="../assets/32-03.png"
+  decoding="async"
   alt=""
 >
 
@@ -306,7 +307,7 @@ html, body {
 
         <!-- 폴더 안쪽 -->
         <div id="back">
-          <img src="../assets/32-02.png" alt="">
+          <img data-src="../assets/32-02.png" decoding="async" alt="">
         </div>
 
         <!-- 폴더 앞면 -->
@@ -314,6 +315,8 @@ html, body {
   id="front"
   class="folder-svg"
   src="../assets/32-01.png"
+  fetchpriority="high"
+  decoding="async"
   alt=""
 >
         <div id="hinge"></div>
@@ -522,9 +525,26 @@ function animateFolder() {
 
 function scrollFolder(pixels) {
   if (pixels <= 0 || requestedProgress === 1) return;
+  prepareFolderAssets();
   requestedProgress = clamp(requestedProgress + pixels / window.innerHeight);
   if (!animatingFolder) animateFolder();
 }
+
+let folderAssetsReady;
+function prepareFolderAssets() {
+  if (folderAssetsReady) return folderAssetsReady;
+
+  folderAssetsReady = Promise.all([paper, back].map(container => {
+    const image = container.querySelector('img');
+    if (!image.src) image.src = image.dataset.src;
+    return image.decode().catch(error => console.warn('Folder image decode failed:', error));
+  }));
+
+  return folderAssetsReady;
+}
+
+window.addEventListener('pointerdown', prepareFolderAssets, { once: true, passive: true });
+window.addEventListener('touchstart', prepareFolderAssets, { once: true, passive: true });
 
 draw(0);
 window.installProjectScrollHint(() => requestedProgress === 0);

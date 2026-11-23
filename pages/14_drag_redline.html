@@ -342,10 +342,10 @@ body{
 
     <video
       id="stageVideoPlayer"
-      src="../assets/18-video.mp4"
+      data-src="../assets/18-video.mp4"
       muted
       playsinline
-      preload="auto"
+      preload="none"
     ></video>
 
    
@@ -1885,6 +1885,12 @@ async function triggerVideoBlink(){
     document.getElementById(
       "stageVideoPlayer"
     );
+
+  // 영상으로 넘어가는 눈 깜빡임 직전에만 파일을 요청한다.
+  if (!video.src) {
+    video.src = video.dataset.src;
+    video.load();
+  }
 
 
   blink.style.visibility =

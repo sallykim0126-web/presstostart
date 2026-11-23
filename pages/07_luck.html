@@ -656,7 +656,8 @@ model.traverse(obj => {
 
     const loader = new GLTFLoader();
 
-    loader.load(
+    function loadDiceModel() {
+      loader.load(
 
       MODEL_PATH,
 
@@ -685,7 +686,15 @@ model.traverse(obj => {
 
       }
 
-    );
+      );
+    }
+
+    // 첫 화면과 입력 처리를 먼저 그린 뒤 11.4MB 모델 요청을 시작한다.
+    const scheduleModelLoad = window.requestIdleCallback
+      ? callback => window.requestIdleCallback(callback, { timeout: 700 })
+      : callback => setTimeout(callback, 120);
+
+    scheduleModelLoad(loadDiceModel);
 
 
     // =====================================================
@@ -1165,7 +1174,16 @@ window.resetLuckDice = function () {
       body.aabbNeedsUpdate = true;
     }
 
+    let animationRunning = false;
+
     function animate() {
+
+      if (document.hidden) {
+        animationRunning = false;
+        return;
+      }
+
+      animationRunning = true;
 
       requestAnimationFrame(animate);
 
@@ -1324,7 +1342,15 @@ if (elapsed > 9) {
     // 19. 실행
     // =====================================================
 
-    animate();
+    function startAnimation() {
+      if (!animationRunning && !document.hidden) {
+        animationRunning = true;
+        requestAnimationFrame(animate);
+      }
+    }
+
+    document.addEventListener('visibilitychange', startAnimation);
+    startAnimation();
 
   </script>
 

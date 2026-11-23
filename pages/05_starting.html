@@ -474,11 +474,13 @@ function moveDrag(e) {
   // 상하 이동
   const newY = e.clientY - sceneRect.top - offsetY;
 
-  // 아래로 내려갈 수 있는 최대 위치
-  const maxY = -activeCard.getBoundingClientRect().height * 0.2;
+  // 화면 크기가 달라도 카드의 사원증 부분을 리더기까지 옮길 수 있게 제한
+  const cardHeight = activeCard.getBoundingClientRect().height;
+  const minY = -cardHeight * 0.8;
+  const maxY = sceneRect.height - cardHeight * 0.2;
 
   activeCard.style.top =
-    Math.min(newY, maxY) + 'px';
+    Math.max(minY, Math.min(newY, maxY)) + 'px';
 
   setReaderActive(isOverReader(activeCard));
 }
@@ -686,25 +688,31 @@ async function blinkToNext() {
   const nextSceneReady = nextScene.decode().catch(error => console.warn(error));
 
   blinkLayer.style.visibility = 'visible';
-  await eye(0, 1, BLINK_CLOSE_MS);
 
-  // Keep the fully closed eye on screen before replacing the scene.
-  await new Promise(resolve => {
-    requestAnimationFrame(() => requestAnimationFrame(resolve));
-  });
+  try {
+    await eye(0, 1, BLINK_CLOSE_MS);
 
-  await nextSceneReady;
-  scene.replaceChildren(nextScene);
+    // Keep the fully closed eye on screen before replacing the scene.
+    await new Promise(resolve => {
+      requestAnimationFrame(() => requestAnimationFrame(resolve));
+    });
 
-  await new Promise(resolve => setTimeout(resolve, BLINK_HOLD_MS));
-  await eye(1, 0, BLINK_OPEN_MS);
+    await nextSceneReady;
+    scene.replaceChildren(nextScene);
 
-  blinkLayer.style.visibility = 'hidden';
-  blinkLayer.style.backgroundColor = 'transparent';
+    await new Promise(resolve => setTimeout(resolve, BLINK_HOLD_MS));
+    await eye(1, 0, BLINK_OPEN_MS);
 
-  // Leave the revealed scene visible before allowing the next scroll.
-  await new Promise(resolve => setTimeout(resolve, 500));
-  document.documentElement.dataset.blinkDone = 'true';
+    // Leave the revealed scene visible before allowing the next scroll.
+    await new Promise(resolve => setTimeout(resolve, 500));
+    document.documentElement.dataset.blinkDone = 'true';
+  } catch (error) {
+    console.error('Card transition failed:', error);
+  } finally {
+    // 어떤 자산 오류가 나도 검은 눈꺼풀에 화면이 갇히지 않게 한다.
+    blinkLayer.style.visibility = 'hidden';
+    blinkLayer.style.backgroundColor = 'transparent';
+  }
 }
 
 

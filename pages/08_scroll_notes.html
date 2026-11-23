@@ -83,13 +83,15 @@ html, body {
 <img
   class="scroll-image"
   src="./17_light.webp"
+  fetchpriority="high"
+  decoding="async"
   alt=""
   draggable="false"
 >
 
 <!-- 다음 장면 -->
 <div id="next-screen">
-  <img src="./19.svg" alt="">
+  <img data-src="./19.svg" alt="">
 </div>
 
 <!-- 03 페이지의 곡선 눈꺼풀 구조 -->
@@ -142,6 +144,17 @@ html, body {
 
   const nextScreen =
     document.getElementById('next-screen');
+  const nextImage = nextScreen.querySelector('img');
+  let nextImageReady;
+
+  function prepareNextImage() {
+    if (nextImageReady) return nextImageReady;
+    nextImage.src = nextImage.dataset.src;
+    nextImageReady = nextImage.decode().catch(error => {
+      console.warn('Next notes image decode failed:', error);
+    });
+    return nextImageReady;
+  }
 
   let isNextScreen = false;
   let busy = false;
@@ -296,6 +309,9 @@ function canScroll() {
   let lastNotesScrollAt = -Infinity;
   window.addEventListener('scroll', () => {
     if (window.scrollY > 0) startedNotesScroll = true;
+    if (window.scrollY > document.documentElement.scrollHeight * 0.65) {
+      prepareNextImage();
+    }
     updateBottomReachedAt();
 
     if (!canScroll() || busy || isNextScreen) return;
@@ -311,6 +327,7 @@ function canScroll() {
     if (busy || isNextScreen === showNext) return;
 
     if (showNext) {
+      await prepareNextImage();
       updateBottomReachedAt();
       if (bottomReachedAt === null ||
           performance.now() - bottomReachedAt < BOTTOM_DELAY_MS) {

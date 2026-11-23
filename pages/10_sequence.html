@@ -505,8 +505,8 @@ body.crt-shutdown::after {
 <div id="glitchOverlay">
   <video
     id="glitchVideo"
-    src="../assets/glitch.mp4"
-    preload="auto"
+    data-src="../assets/glitch.mp4"
+    preload="none"
     muted
     playsinline
   ></video>
@@ -833,6 +833,12 @@ async function playGlitchVideo() {
   const interactions = new AbortController();
   const { signal } = interactions;
   const hideScrollHint = () => { showGlitchScrollHint = false; };
+
+  // 영상 장면이 실제로 시작되기 직전에만 네트워크 요청을 시작한다.
+  if (!video.src) {
+    video.src = video.dataset.src;
+    video.load();
+  }
 
   overlay.classList.add("active");
   video.currentTime = 0;

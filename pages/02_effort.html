@@ -506,14 +506,27 @@ function draw(p){
 }
   hint.style.opacity=1-smooth(p/.07);
 }
+let effortAnimationRunning = false;
 function animate(){
+  if (document.hidden) {
+    effortAnimationRunning = false;
+    return;
+  }
+  effortAnimationRunning = true;
   const usable=Math.max(1,scroll.offsetHeight-innerHeight);
   const target=clamp(-scroll.getBoundingClientRect().top/usable);
   shown+=(target-shown)*.18;
   draw(shown);
   requestAnimationFrame(animate);
 }
-draw(0);animate();
+function startEffortAnimation(){
+  if (!effortAnimationRunning && !document.hidden) {
+    effortAnimationRunning = true;
+    requestAnimationFrame(animate);
+  }
+}
+document.addEventListener('visibilitychange', startEffortAnimation);
+draw(0);startEffortAnimation();
 
 /* ===== 리더보드 + Supabase ===== */
 

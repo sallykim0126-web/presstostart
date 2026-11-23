@@ -345,14 +345,14 @@ body:has(#ending17:not([hidden])) #endingScrollHint:not([hidden]) {
   <!-- 가장 아래 -->
   <img
     id="base16"
-    src="../assets/36-16.png"
+    data-src="../assets/36-16.png"
     alt=""
   >
 
   <!-- 중간 -->
   <img
     id="paper08"
-    src="../assets/36-08.png"
+    data-src="../assets/36-08.png"
     alt=""
   >
 
@@ -363,7 +363,7 @@ body:has(#ending17:not([hidden])) #endingScrollHint:not([hidden]) {
   <!-- 리더보드 종이 이미지 -->
   <img
     id="paper17"
-    src="../assets/36-17.png"
+    data-src="../assets/36-17.png"
     alt=""
   >
 
@@ -499,6 +499,26 @@ const scene15 =
 
 const scene16 =
   document.getElementById("scene16");
+
+const scene16Images = [
+  document.getElementById("base16"),
+  document.getElementById("paper08"),
+  document.getElementById("paper17")
+];
+
+let scene16AssetsReady;
+function prepareScene16Assets() {
+  if (scene16AssetsReady) return scene16AssetsReady;
+
+  scene16AssetsReady = Promise.all(scene16Images.map(image => {
+    if (!image.src) image.src = image.dataset.src;
+    return image.decode().catch(error => {
+      console.warn('Scene 16 image decode failed:', image.dataset.src, error);
+    });
+  }));
+
+  return scene16AssetsReady;
+}
 
 const blink =
   document.getElementById("blink");
@@ -642,6 +662,9 @@ function showScene15() {
 
   scene = 15;
 
+  // 다음 장면의 약 4.8MB PNG들은 필요해지기 직전에만 준비한다.
+  prepareScene16Assets();
+
   // 이전 스크롤 관성으로 바로 넘어가는 것 방지
   scrollUnlockTime =
     performance.now() + SCROLL_UNLOCK_MS;
@@ -661,6 +684,8 @@ async function goToScene16() {
   if (busy || scene !== 15) return;
 
   busy = true;
+
+  await prepareScene16Assets();
 
   // 눈 깜박임 초기화
   drawEye(0);

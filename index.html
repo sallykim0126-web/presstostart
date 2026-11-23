@@ -167,6 +167,40 @@ const PAGES = [
 
 ];
 
+// 현재 iframe이 뜬 뒤, 다음 페이지의 핵심 자산 딱 하나만 준비한다.
+const PAGE_CORE_ASSET = {
+  'pages/02_effort.html': 'pages/05-04%202.webp',
+  'pages/03_blink.html': 'pages/08-10.svg',
+  'pages/04_efficiency.html': 'assets/10-02.png',
+  'pages/05_starting.html': 'assets/11-04.webp',
+  'pages/06_time_limit.html': 'flip-clock-assets/12-09.svg',
+  'pages/07_luck.html': 'assets/15-14.webp',
+  'pages/08_scroll_notes.html': 'pages/17_light.webp',
+  'pages/09_grit.html': 'assets/21.webp',
+  'pages/10_sequence.html': 'assets/28.webp',
+  'pages/11_stack.html': 'assets/30-01.webp',
+  'pages/11.5.html': 'assets/31-0.5.webp',
+  'pages/12_leaderboard.html': 'assets/32-01.png',
+  'pages/13.html': 'assets/33-14.svg',
+  'pages/14_drag_redline.html': 'assets/40-10.webp'
+};
+
+let nextAssetPrefetch;
+function warmNextPage(index) {
+  const nextPage = PAGES[index + 1];
+  const href = PAGE_CORE_ASSET[nextPage];
+  if (!href) return;
+
+  if (!nextAssetPrefetch) {
+    nextAssetPrefetch = document.createElement('link');
+    nextAssetPrefetch.rel = 'prefetch';
+    nextAssetPrefetch.as = 'image';
+    document.head.appendChild(nextAssetPrefetch);
+  }
+
+  nextAssetPrefetch.href = href;
+}
+
 
 
 const frame =
@@ -198,6 +232,8 @@ let currentPage = 0;
 
 frame.src =
   PAGES[currentPage];
+
+frame.addEventListener('load', () => warmNextPage(currentPage), { once: true });
 
 
 let busy = false;
@@ -381,18 +417,33 @@ function eye(from, to, duration) {
 function loadScene(url){
 
   return new Promise(
-    resolve => {
+    (resolve, reject) => {
+
+      const timeout = setTimeout(() => {
+        reject(new Error('Scene load timed out: ' + url));
+      }, 15000);
+
+      const finish = callback => event => {
+        clearTimeout(timeout);
+        callback(event);
+      };
 
       frame.addEventListener(
 
         'load',
 
-        resolve,
+        finish(resolve),
 
         {
           once:true
         }
 
+      );
+
+      frame.addEventListener(
+        'error',
+        finish(() => reject(new Error('Scene load failed: ' + url))),
+        { once:true }
       );
 
 
@@ -454,6 +505,8 @@ async function goTo(index){
 
     currentPage =
       index;
+
+    warmNextPage(currentPage);
 
 
     await pause(blinkHoldMs);
