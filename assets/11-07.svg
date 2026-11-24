@@ -3,7 +3,7 @@
   <defs>
     <style>
       .cls-1 {
-        font-family: 'Times New Roman', Times, serif;
+        font-family: 'IBM Plex Mono', Times, serif;
         font-weight: 600;
       }
 
@@ -20,7 +20,7 @@
       }
 
       .cls-5, .cls-2 {
-        font-family: 'Times New Roman', Times, serif;
+        font-family: 'IBM Plex Mono', Times, serif;
       }
 
       .cls-6 {
@@ -33,7 +33,7 @@
       }
 
       .cls-4 {
-        font-family: 'Times New Roman', Times, serif;
+        font-family: 'IBM Plex Mono', Times, serif;
         font-size: 99.1px;
         font-weight: 700;
       }
