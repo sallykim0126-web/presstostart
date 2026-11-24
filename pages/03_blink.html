@@ -59,8 +59,9 @@
     display: block;
   }
 </style>
-<script src="../assets/project-sounds.js"></script>
+<script src="../assets/project-sounds.js?v=compact-audio"></script>
 <script src="../assets/project-scroll-hint.js?v=2"></script>
+<script src="../assets/project-blink.js"></script>
 </head>
 
 <body>
@@ -85,35 +86,6 @@
 
 <!-- 눈 깜빡임 -->
 <div id="blink" aria-hidden="true">
-  <svg viewBox="0 0 1000 600"
-       preserveAspectRatio="none">
-
-    <defs>
-      <filter id="edgeBlur"
-              x="-15%" y="-30%"
-              width="130%" height="160%">
-        <feGaussianBlur stdDeviation="17"/>
-      </filter>
-    </defs>
-
-    <rect id="topCover"
-          x="-60" y="-60"
-          width="1120" height="60"
-          fill="black"/>
-
-    <rect id="bottomCover"
-          x="-60" y="600"
-          width="1120" height="60"
-          fill="black"/>
-
-    <path id="lidTop"
-          fill="black"
-          filter="url(#edgeBlur)"/>
-
-    <path id="lidBottom"
-          fill="black"
-          filter="url(#edgeBlur)"/>
-  </svg>
 </div>
 
 <script>
@@ -125,10 +97,6 @@
   const OPEN_MS = 950;
 
   const blink = document.getElementById('blink');
-  const lidTop = document.getElementById('lidTop');
-  const lidBottom = document.getElementById('lidBottom');
-  const topCover = document.getElementById('topCover');
-  const bottomCover = document.getElementById('bottomCover');
 
   const art10 = document.getElementById('art10');
   const art11 = document.getElementById('art11');
@@ -145,46 +113,7 @@
 
   // 눈꺼풀 모양
   function drawEye(p) {
-    p = clamp(p);
-
-    const edge = 300 * p;
-    const curve = 190 * Math.sin(Math.PI * p);
-    const bottom = 600 - edge;
-    const fade = Math.min(1, Math.max(0, p / 0.12));
-
-    lidTop.setAttribute(
-      'd',
-      `M-100 -100 H1100 V${edge} Q500 ${edge + curve} -100 ${edge} Z`
-    );
-
-    lidBottom.setAttribute(
-      'd',
-      `M-100 700 H1100 V${bottom} Q500 ${bottom - curve} -100 ${bottom} Z`
-    );
-
-    for (const el of [
-      lidTop,
-      lidBottom,
-      topCover,
-      bottomCover
-    ]) {
-      el.style.opacity = fade;
-    }
-
-    topCover.setAttribute(
-      'height',
-      String(60 + Math.max(0, edge - 60))
-    );
-
-    bottomCover.setAttribute(
-      'y',
-      String(Math.min(600, bottom + 60))
-    );
-
-    bottomCover.setAttribute(
-      'height',
-      String(660 - Math.min(600, bottom + 60))
-    );
+    window.drawPrestoEyelids(document.getElementById("blink"), p);
   }
 
   // 눈꺼풀 움직임

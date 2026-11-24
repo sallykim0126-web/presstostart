@@ -461,8 +461,9 @@ body.crt-shutdown::after {
     z-index: 10001;
   }
 </style>
-<script src="../assets/project-sounds.js"></script>
+<script src="../assets/project-sounds.js?v=compact-audio"></script>
 <script src="../assets/project-scroll-hint.js?v=2"></script>
+<script src="../assets/project-blink.js"></script>
 </head>
 
 <body>
@@ -477,36 +478,6 @@ body.crt-shutdown::after {
 
 <!-- 눈 깜박임 효과 -->
 <div id="sequence-blink" aria-hidden="true">
-  <svg viewBox="0 0 1000 600"
-       preserveAspectRatio="none">
-
-    <defs>
-      <filter id="sequenceEdgeBlur"
-              x="-15%" y="-30%"
-              width="130%" height="160%">
-        <feGaussianBlur stdDeviation="17"/>
-      </filter>
-    </defs>
-
-    <rect id="sequenceTopCover"
-          x="-60" y="-60"
-          width="1120" height="60"
-          fill="black"/>
-
-    <rect id="sequenceBottomCover"
-          x="-60" y="600"
-          width="1120" height="60"
-          fill="black"/>
-
-    <path id="sequenceLidTop"
-          fill="black"
-          filter="url(#sequenceEdgeBlur)"/>
-
-    <path id="sequenceLidBottom"
-          fill="black"
-          filter="url(#sequenceEdgeBlur)"/>
-
-  </svg>
 </div>
 
 
@@ -562,6 +533,7 @@ body.crt-shutdown::after {
 ====================================== */
 
 const introArt = document.getElementById("intro-art");
+window.projectSounds?.preload("tryHarderImpact");
 const introArtReady = introArt.decode().catch(() => {});
 const introSceneVisible = new Promise(resolve => {
   if (window.parent === window) {
@@ -665,63 +637,12 @@ function waitForIntroSwipe() {
 const sequenceBlink =
   document.getElementById("sequence-blink");
 
-const sequenceLidTop =
-  document.getElementById("sequenceLidTop");
 
-const sequenceLidBottom =
-  document.getElementById("sequenceLidBottom");
 
-const sequenceTopCover =
-  document.getElementById("sequenceTopCover");
 
-const sequenceBottomCover =
-  document.getElementById("sequenceBottomCover");
 
 function drawSequenceEye(p) {
-  p = Math.max(0, Math.min(1, p));
-
-  const edge = 300 * p;
-  const curve = 190 * Math.sin(Math.PI * p);
-  const bottom = 600 - edge;
-  const fade = Math.min(1, p / 0.12);
-
-  sequenceLidTop.setAttribute(
-    "d",
-    `M-100 -100 H1100 V${edge} Q500 ${edge + curve} -100 ${edge} Z`
-  );
-
-  sequenceLidBottom.setAttribute(
-    "d",
-    `M-100 700 H1100 V${bottom} Q500 ${bottom - curve} -100 ${bottom} Z`
-  );
-
-  [
-    sequenceLidTop,
-    sequenceLidBottom,
-    sequenceTopCover,
-    sequenceBottomCover
-  ].forEach(el => {
-    el.style.opacity = fade;
-  });
-
-  sequenceTopCover.setAttribute(
-    "height",
-    String(60 + Math.max(0, edge - 60))
-  );
-
-  sequenceBottomCover.setAttribute(
-    "y",
-    String(Math.min(600, bottom + 60))
-  );
-
-  sequenceBottomCover.setAttribute(
-    "height",
-    String(660 - Math.min(600, bottom + 60))
-  );
-
-  // 완전히 감겼을 때 화면 전체를 검정으로
-  sequenceBlink.style.backgroundColor =
-    p >= 0.999 ? "#000" : "transparent";
+  window.drawPrestoEyelids(document.getElementById("sequence-blink"), p);
 }
 
 function tweenSequenceEye(from, to, duration) {
@@ -1031,6 +952,9 @@ async function playGlitchVideo() {
         track.style.setProperty("--row-scale", scale);
         rows[index].style.visibility = "visible";
         if (index < 4) window.projectSounds?.play("tryHarderRow");
+        if ([6, 9, 12].includes(index)) {
+          window.projectSounds?.play("tryHarderImpact", { toProgress: 0.22 });
+        }
       }
 
       await Promise.all([introArtReady, introRevealDelay]);

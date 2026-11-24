@@ -48,7 +48,8 @@
     height: 100%;
   }
 </style>
-<script src="assets/project-sounds.js?v=scene-audio"></script>
+<script src="assets/project-sounds.js?v=compact-audio"></script>
+<script src="assets/project-blink.js"></script>
 </head>
 
 
@@ -57,66 +58,12 @@
 
 <iframe
   id="pageFrame"
-  src="pages/01_presto.html"
+  src="pages/01_presto.html?v=timing-2"
   title="Interactive scene"
 ></iframe>
 
 
 <div id="blink" aria-hidden="true">
-
-  <svg
-    viewBox="0 0 1000 600"
-    preserveAspectRatio="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-
-    <defs>
-
-      <filter
-        id="edgeBlur"
-        x="-20%"
-        y="-30%"
-        width="140%"
-        height="160%"
-      >
-
-        <feGaussianBlur stdDeviation="17" />
-
-      </filter>
-
-    </defs>
-
-
-    <path
-      id="lidTop"
-      fill="black"
-      filter="url(#edgeBlur)"
-    />
-
-
-    <path
-      id="lidBottom"
-      fill="black"
-      filter="url(#edgeBlur)"
-    />
-<rect
-  id="topCover"
-  x="-60"
-  y="-60"
-  width="1120"
-  height="60"
-  fill="black"
-/>
-
-<rect
-  id="bottomCover"
-  x="-60"
-  y="600"
-  width="1120"
-  height="60"
-  fill="black"
-/>
-  </svg>
 
 </div>
 
@@ -181,7 +128,7 @@ const PAGE_CORE_ASSET = {
   'pages/11_stack.html': 'assets/30-01.webp',
   'pages/11.5.html': 'assets/31-0.5.webp',
   'pages/12_leaderboard.html': 'assets/32-01.png',
-  'pages/13.html': 'assets/33-14.svg',
+  'pages/13.html': 'assets/33-14.svg?v=2',
   'pages/14_drag_redline.html': 'assets/40-18.webp'
 };
 
@@ -215,23 +162,13 @@ const blink =
   );
 
 
-const lidTop =
-  document.getElementById(
-    'lidTop'
-  );
 
 
-const lidBottom =
-  document.getElementById(
-    'lidBottom'
-  );
 
 
 
 let currentPage = 0;
-
-frame.src =
-  PAGES[currentPage];
+const sceneURL = path => path + '?v=timing-2';
 
 frame.addEventListener('load', () => warmNextPage(currentPage), { once: true });
 
@@ -263,102 +200,7 @@ const pause =
    ========================================= */
 
 function drawEye(p) {
-
-  p = Math.max(0, Math.min(1, p));
-
-  const edge = 300 * p;
-
-  const curve =
-    190 * Math.sin(Math.PI * p);
-
-  const bottom =
-    600 - edge;
-
-  const fade =
-    Math.min(
-      1,
-      Math.max(
-        0,
-        p / 0.12
-      )
-    );
-
-
-  lidTop.setAttribute(
-    "d",
-    `M-100 -100
-     H1100
-     V${edge}
-     Q500 ${edge + curve} -100 ${edge}
-     Z`
-  );
-
-
-  lidBottom.setAttribute(
-    "d",
-    `M-100 700
-     H1100
-     V${bottom}
-     Q500 ${bottom - curve} -100 ${bottom}
-     Z`
-  );
-
-
-  for (const el of [
-    lidTop,
-    lidBottom,
-    document.getElementById("topCover"),
-    document.getElementById("bottomCover")
-  ]) {
-    el.style.opacity = fade;
-  }
-
-
-  document
-    .getElementById("topCover")
-    .setAttribute(
-      "height",
-      String(
-        60 +
-        Math.max(
-          0,
-          edge - 60
-        )
-      )
-    );
-
-
-  document
-    .getElementById("bottomCover")
-    .setAttribute(
-      "y",
-      String(
-        Math.min(
-          600,
-          bottom + 60
-        )
-      )
-    );
-
-
-  document
-    .getElementById("bottomCover")
-    .setAttribute(
-      "height",
-      String(
-        660 -
-        Math.min(
-          600,
-          bottom + 60
-        )
-      )
-    );
-
-
-  blink.style.backgroundColor =
-    p >= 0.985
-      ? "#000"
-      : "transparent";
+  window.drawPrestoEyelids(document.getElementById("blink"), p);
 }
 
 
@@ -447,8 +289,7 @@ function loadScene(url){
       );
 
 
-      frame.src =
-        url;
+      frame.src = sceneURL(url);
 
     }
   );
@@ -544,6 +385,10 @@ async function goTo(index){
 
   if (toPage === 'pages/10_sequence.html') {
     frame.contentWindow.postMessage({ type: 'SEQUENCE_SCENE_VISIBLE' }, window.location.origin);
+  }
+
+  if (toPage === 'pages/13.html') {
+    frame.contentWindow.postMessage({ type: 'LEADER_QUOTE_VISIBLE' }, window.location.origin);
   }
 
 }
@@ -758,7 +603,7 @@ frame.addEventListener(
 
 
     if(
-      !frame.src.endsWith(
+      !new URL(frame.src).pathname.endsWith(
         '/pages/04_efficiency.html'
       )
     ){
@@ -828,7 +673,7 @@ frame.addEventListener(
 
 
     if(
-      !frame.src.endsWith(
+      !new URL(frame.src).pathname.endsWith(
         '/pages/05_starting.html'
       )
     ){

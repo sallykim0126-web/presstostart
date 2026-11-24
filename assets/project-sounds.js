@@ -32,7 +32,9 @@
   function createPlayer() {
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     const audio = AudioContext ? new AudioContext() : null;
-    const assetBase = new URL('.', document.currentScript.src);
+    const scriptURL = new URL(document.currentScript.src);
+    const assetBase = new URL('.', scriptURL);
+    const assetRevision = scriptURL.search;
     const effects = {
       click: { file: 'presto-mouse-click.m4a', volume: 0.45 },
       leftMouse: { file: 'presto-left-mouse.m4a', volume: 0.45 },
@@ -58,7 +60,9 @@
       const effect = effects[name];
       if (!audio || !effect) return Promise.resolve(null);
       if (!effect.buffer) {
-        effect.buffer = fetch(new URL(effect.file, assetBase))
+        const url = new URL(effect.file, assetBase);
+        url.search = assetRevision;
+        effect.buffer = fetch(url)
           .then(response => {
             if (!response.ok) throw new Error('Sound file unavailable');
             return response.arrayBuffer();

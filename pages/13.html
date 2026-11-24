@@ -8,6 +8,7 @@
 
 <title>EFFORT — 13</title>
 
+<link rel="stylesheet" href="../assets/fonts/presto-fonts.css">
 <style>
 * {
   box-sizing: border-box;
@@ -153,7 +154,7 @@ html, body {
                monospace;
 
   font-size: 18px;
-  font-weight: 400;
+  font-weight: 600;
   color: #242424;
 
   white-space: nowrap;
@@ -278,8 +279,9 @@ html, body {
 
 
 </style>
-<script src="../assets/project-sounds.js"></script>
+<script src="../assets/project-sounds.js?v=compact-audio"></script>
 <script src="../assets/project-scroll-hint.js?v=2"></script>
+<script src="../assets/project-blink.js"></script>
 </head>
 
 <body>
@@ -290,7 +292,7 @@ html, body {
 
 <!-- 01. 첫 번째 이미지 -->
 <div id="scene14" class="scene">
-  <img src="../assets/33-14.svg" alt="">
+  <img src="../assets/33-14.svg?v=2" alt="">
 </div>
 
 <!-- 02. 2초 후 등장 -->
@@ -376,53 +378,6 @@ html, body {
 ================================== -->
 
 <div id="blink" aria-hidden="true">
-
-  <svg viewBox="0 0 1000 600"
-       preserveAspectRatio="none">
-
-    <defs>
-      <filter
-        id="edgeBlur"
-        x="-15%"
-        y="-30%"
-        width="130%"
-        height="160%"
-      >
-        <feGaussianBlur stdDeviation="17"/>
-      </filter>
-    </defs>
-
-    <rect
-      id="topCover"
-      x="-60"
-      y="-60"
-      width="1120"
-      height="60"
-      fill="black"
-    />
-
-    <rect
-      id="bottomCover"
-      x="-60"
-      y="600"
-      width="1120"
-      height="60"
-      fill="black"
-    />
-
-    <path
-      id="lidTop"
-      fill="black"
-      filter="url(#edgeBlur)"
-    />
-
-    <path
-      id="lidBottom"
-      fill="black"
-      filter="url(#edgeBlur)"
-    />
-
-  </svg>
 </div>
 
 <script>
@@ -433,7 +388,7 @@ html, body {
 ================================== */
 
 // 첫 번째 이미지가 유지되는 시간
-const AUTO_CHANGE_MS = 2300;
+const AUTO_CHANGE_MS = 2000;
 
 // 눈 감고 / 정지 / 뜨는 시간
 // 기존 03_blink 코드 기준
@@ -480,17 +435,9 @@ function prepareScene16Assets() {
 const blink =
   document.getElementById("blink");
 
-const lidTop =
-  document.getElementById("lidTop");
 
-const lidBottom =
-  document.getElementById("lidBottom");
 
-const topCover =
-  document.getElementById("topCover");
 
-const bottomCover =
-  document.getElementById("bottomCover");
 
 // 현재 장면
 let scene = 14;
@@ -519,58 +466,7 @@ const pause = ms =>
 ================================== */
 
 function drawEye(p) {
-
-  p = clamp(p);
-
-  const edge = 300 * p;
-
-  const curve =
-    190 * Math.sin(Math.PI * p);
-
-  const bottom = 600 - edge;
-
-  const fade =
-    Math.min(1, Math.max(0, p / 0.12));
-
-  // 위쪽 눈꺼풀
-  lidTop.setAttribute(
-    "d",
-    `M-100 -100 H1100 V${edge}
-     Q500 ${edge + curve} -100 ${edge} Z`
-  );
-
-  // 아래쪽 눈꺼풀
-  lidBottom.setAttribute(
-    "d",
-    `M-100 700 H1100 V${bottom}
-     Q500 ${bottom - curve} -100 ${bottom} Z`
-  );
-
-  for (const el of [
-    lidTop,
-    lidBottom,
-    topCover,
-    bottomCover
-  ]) {
-    el.style.opacity = fade;
-  }
-
-  topCover.setAttribute(
-    "height",
-    String(60 + Math.max(0, edge - 60))
-  );
-
-  bottomCover.setAttribute(
-    "y",
-    String(Math.min(600, bottom + 60))
-  );
-
-  bottomCover.setAttribute(
-    "height",
-    String(
-      660 - Math.min(600, bottom + 60)
-    )
-  );
+  window.drawPrestoEyelids(document.getElementById("blink"), p);
 }
 
 /* ==================================
@@ -687,37 +583,19 @@ async function goToScene16() {
 ========================================== */
 
 async function goToScene14() {
-
   if (busy || scene !== 34 || ending17.hidden) return;
-
   busy = true;
 
-  drawEye(0);
-  blink.style.backgroundColor = "transparent";
-  blink.style.visibility = "visible";
-
-  // ① 눈 감기
-  await tween(0, 1, 850);
-
-  // ② 완전히 감긴 상태
-  blink.style.backgroundColor = "#000";
-
-  await pause(200);
-
-  // ③ 부모 페이지에 다음 장면 요청
   if (window.parent !== window) {
-
-    window.parent.postMessage(
-      { type: "NEXT_PAGE" },
-      "*"
-    );
-
-  } else {
-
-    // HTML 파일을 단독 실행할 때
-    window.location.href =
-      "14_drag_redline.html";
+    window.parent.postMessage({ type: "NEXT_PAGE" }, window.location.origin);
+    return;
   }
+
+  drawEye(0);
+  blink.style.visibility = "visible";
+  await tween(0, 1, 850);
+  await pause(200);
+  window.location.href = "14_drag_redline.html";
 }
 
 
@@ -729,12 +607,6 @@ function handleScroll(deltaY) {
 
   if (deltaY <= 8) return;
   if (busy) return;
-
-  // 33-14 (AT THIS) → 33-15
-  if (scene === 14) {
-    showScene15();
-    return;
-  }
 
   // 33-15 → 눈 깜박임 → 36-16 + 36-08 + 36-17
   if (scene === 15) {
@@ -791,39 +663,7 @@ window.addEventListener("keydown", event => {
    11.5와 동일한 효과
 ========================================== */
 
-async function goToScene14() {
 
-  if (busy || scene !== 34 || ending17.hidden) return;
-
-  busy = true;
-
-  drawEye(0);
-  blink.style.backgroundColor = "transparent";
-  blink.style.visibility = "visible";
-
-  // ① 눈 감기
-  await tween(0, 1, 850);
-
-  // ② 완전히 감긴 상태
-  blink.style.backgroundColor = "#000";
-
-  await pause(200);
-
-  // ③ 부모 페이지에 다음 장면 요청
-  if (window.parent !== window) {
-
-    window.parent.postMessage(
-      { type: "NEXT_PAGE" },
-      "*"
-    );
-
-  } else {
-
-    // HTML 파일을 단독 실행할 때
-    window.location.href =
-      "14_drag_redline.html";
-  }
-}
 
 /* ==================================
    8. 페이지 시작
@@ -833,7 +673,18 @@ async function goToScene14() {
 drawEye(0);
 blink.style.visibility = "hidden";
 
-// 첫 이미지 1.5초 노출
+// Start the two-second hold once the parent blink has opened.
+if (window.parent === window) {
+  window.addEventListener("load", () => setTimeout(showScene15, AUTO_CHANGE_MS), { once: true });
+} else {
+  function startQuoteHold(event) {
+    if (event.source !== window.parent || event.origin !== window.location.origin ||
+        event.data?.type !== "LEADER_QUOTE_VISIBLE") return;
+    window.removeEventListener("message", startQuoteHold);
+    setTimeout(showScene15, AUTO_CHANGE_MS);
+  }
+  window.addEventListener("message", startQuoteHold);
+}
 
 
 

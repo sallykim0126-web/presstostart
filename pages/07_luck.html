@@ -203,8 +203,9 @@
     }
   }
   </script>
-<script src="../assets/project-sounds.js"></script>
+<script src="../assets/project-sounds.js?v=compact-audio"></script>
 <script src="../assets/project-scroll-hint.js?v=2"></script>
+<script src="../assets/project-blink.js"></script>
 </head>
 
 <body>
@@ -238,7 +239,7 @@
     // ★ 원하는 방향으로 직접 조절할 값 ★
     // =====================================================
 
-    const MODEL_PATH = '../assets/dice.glb';
+    const MODEL_PATH = '../assets/dice.glb?v=2';
 
     // 착지했을 때 주사위 크기
     const DICE_SIZE = 1.5;
@@ -689,7 +690,7 @@ model.traverse(obj => {
       );
     }
 
-    // 첫 화면과 입력 처리를 먼저 그린 뒤 11.4MB 모델 요청을 시작한다.
+    // 첫 화면과 입력 처리를 먼저 그린 뒤 주사위 모델 요청을 시작한다.
     const scheduleModelLoad = window.requestIdleCallback
       ? callback => window.requestIdleCallback(callback, { timeout: 700 })
       : callback => setTimeout(callback, 120);
@@ -1823,55 +1824,6 @@ width: min(14vw, 25vh);
 <!-- 03_blink와 동일한 곡선형 눈 깜박임 -->
 <div id="luck-eye-blink" aria-hidden="true">
 
-  <svg
-    viewBox="0 0 1000 600"
-    preserveAspectRatio="none"
-  >
-
-    <defs>
-      <filter
-        id="luck-edge-blur"
-        x="-15%"
-        y="-30%"
-        width="130%"
-        height="160%"
-      >
-        <feGaussianBlur stdDeviation="17"/>
-      </filter>
-    </defs>
-
-    <rect
-      id="luck-top-cover"
-      x="-60"
-      y="-60"
-      width="1120"
-      height="60"
-      fill="black"
-    />
-
-    <rect
-      id="luck-bottom-cover"
-      x="-60"
-      y="600"
-      width="1120"
-      height="60"
-      fill="black"
-    />
-
-    <path
-      id="luck-lid-top"
-      fill="black"
-      filter="url(#luck-edge-blur)"
-    />
-
-    <path
-      id="luck-lid-bottom"
-      fill="black"
-      filter="url(#luck-edge-blur)"
-    />
-
-  </svg>
-
 </div>
 
 
@@ -2224,11 +2176,7 @@ yesButton.addEventListener("click", () => {
 
 const luckBlink = document.getElementById("luck-eye-blink");
 
-const luckLidTop = document.getElementById("luck-lid-top");
-const luckLidBottom = document.getElementById("luck-lid-bottom");
 
-const luckTopCover = document.getElementById("luck-top-cover");
-const luckBottomCover = document.getElementById("luck-bottom-cover");
 
 const luckEnding = document.getElementById("luck-ending-screen");
 
@@ -2245,55 +2193,7 @@ const easeEye = t => {
 
 // 눈꺼풀 곡선 모양
 function drawLuckEye(p) {
-
-  p = clampEye(p);
-
-  const edge = 300 * p;
-  const curve = 190 * Math.sin(Math.PI * p);
-  const bottom = 600 - edge;
-
-  const fade = Math.min(
-    1,
-    Math.max(0, p / 0.12)
-  );
-
-  luckLidTop.setAttribute(
-    "d",
-    `M-100 -100 H1100 V${edge} Q500 ${edge + curve} -100 ${edge} Z`
-  );
-
-  luckLidBottom.setAttribute(
-    "d",
-    `M-100 700 H1100 V${bottom} Q500 ${bottom - curve} -100 ${bottom} Z`
-  );
-
-  [
-    luckLidTop,
-    luckLidBottom,
-    luckTopCover,
-    luckBottomCover
-  ].forEach(el => {
-    el.style.opacity = fade;
-  });
-
-  luckTopCover.setAttribute(
-    "height",
-    String(60 + Math.max(0, edge - 60))
-  );
-
-  luckBottomCover.setAttribute(
-    "y",
-    String(Math.min(600, bottom + 60))
-  );
-
-  luckBottomCover.setAttribute(
-    "height",
-    String(660 - Math.min(600, bottom + 60))
-  );
-
-  // 눈이 완전히 감겼을 때 빈틈 방지
-  luckBlink.style.backgroundColor =
-    p >= 0.999 ? "#000" : "transparent";
+  window.drawPrestoEyelids(document.getElementById("luck-eye-blink"), p);
 }
 
 
