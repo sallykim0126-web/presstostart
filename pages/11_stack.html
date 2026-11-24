@@ -137,7 +137,8 @@
   width: 100vw !important;
   height: 100vh !important;
 
-  object-fit: cover !important;
+  object-fit: contain !important;
+  background: #000;
 
   z-index: 100 !important;
 
@@ -200,7 +201,7 @@
 <img
   id="intro15"
   src="../assets/32-1.5.svg"
-  alt=""
+  alt="Was there more?"
 >
 
 </div>
@@ -826,40 +827,11 @@ let gestureLocked = false;
 let resetTimer = null;
 let hasStartedScrolling = false;
 
-window.addEventListener(
-  "wheel",
-  async (e) => {
-
-    e.preventDefault();
-
-    clearTimeout(resetTimer);
-
-    resetTimer =
-      setTimeout(() => {
-
-        gestureLocked = false;
-
-      }, SCROLL_RESET);
-
-
-    if (gestureLocked) return;
-
-    if (e.deltaY <= 8) return;
+async function advanceStack(deltaY) {
+    if (deltaY <= 8 || busy || !ready || blinkBusy || gestureLocked) return;
 
     hasStartedScrolling = true;
-
-    if (
-      busy ||
-      !ready ||
-      blinkBusy
-    ) {
-      return;
-    }
-
-
     gestureLocked = true;
-
-
     /* =====================================
        첫 번째 스크롤
        한 장 → blink → 32-1.5
@@ -913,35 +885,34 @@ window.addEventListener(
 
 
     dropNext();
+}
 
-  },
+window.addEventListener("wheel", event => {
+  event.preventDefault();
+  clearTimeout(resetTimer);
+  resetTimer = setTimeout(() => { gestureLocked = false; }, SCROLL_RESET);
+  advanceStack(event.deltaY);
+}, { passive: false });
 
-  {
-    passive: false
-  }
-);
+let swipeStartY;
+window.addEventListener("touchstart", event => {
+  swipeStartY = event.touches.length === 1 ? event.touches[0].clientY : undefined;
+}, { passive: true });
+window.addEventListener("touchend", event => {
+  const deltaY = swipeStartY - event.changedTouches[0].clientY;
+  swipeStartY = undefined;
+  if (deltaY < 40 || !Number.isFinite(deltaY)) return;
+  gestureLocked = false;
+  advanceStack(deltaY);
+}, { passive: true });
 
-
-
-window.addEventListener("keydown", (e) => {
-
-  if (e.key !== "ArrowDown" && e.key !== " ") {
-    return;
-  }
-
-  e.preventDefault();
-
-  hasStartedScrolling = true;
-  if (busy || !ready || blinkBusy) return;
-
-  if (current >= order.length) {
-    requestNextPage();
-  } else {
-    dropNext();
-  }
-
+window.addEventListener("keydown", event => {
+  if (!["ArrowDown", "PageDown", " "].includes(event.key)) return;
+  event.preventDefault();
+  if (event.repeat) return;
+  gestureLocked = false;
+  advanceStack(40);
 });
-
 
 // ==========================================
 // 이미지 로딩 후 시작
@@ -972,7 +943,10 @@ async function prepare() {
 prepare();
 
 
-window.installProjectScrollHint(() => ready && !busy && !blinkBusy && !hasStartedScrolling);
+window.installProjectScrollHint(
+  () => ready && !busy && !blinkBusy && (introStage === 1 || !hasStartedScrolling),
+  { dark: true }
+);
 </script>
 </body>
 </html>

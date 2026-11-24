@@ -88,9 +88,12 @@
 }
 
 
-#intro-screen img {
-  width: 100%;
-  height: 100%;
+#intro-art {
+  /* The center text stays visible while the outer rays can crop on narrow screens. */
+  flex: none;
+  width: min(max(100vw, calc(100dvh * 16 / 9)), 165vw, 250dvh);
+  height: auto;
+  aspect-ratio: 16 / 9;
   object-fit: contain;
 }
 
@@ -462,7 +465,7 @@ body.crt-shutdown::after {
 
   <!-- TRY HARDER 시작 전 화면 -->
 <div id="intro-screen">
-  <img id="intro-art" src="../assets/28.webp" alt="But, couldn’t I just try harder?" hidden>
+  <img id="intro-art" src="../assets/28.webp" alt="But, what if I try harder?" hidden>
 </div>
 
 

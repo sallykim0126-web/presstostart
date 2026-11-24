@@ -238,6 +238,7 @@ body {
 /* 정보창 */
 #popup {
   position: relative;
+  aspect-ratio: 16 / 9;
 
   display: block;
 
@@ -382,7 +383,7 @@ body {
   <!-- 11-07 / 11-08 정보창 -->
   <div id="popupWrap">
 
-  <img id="popup" src="" alt="Initial condition">
+  <object id="popup" type="image/svg+xml" aria-label="Initial condition"></object>
 
   <button id="close" aria-label="Close">×</button>
 
@@ -533,7 +534,7 @@ function scanCard(card) {
   currentScannedCard = card.id;
 
   // 여자 → 07 / 남자 → 08
-  popup.src = card.id === 'female'
+  popup.data = card.id === 'female'
     ? '../assets/11-07.svg'
     : '../assets/11-08.svg';
 

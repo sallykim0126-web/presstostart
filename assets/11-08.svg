@@ -2,8 +2,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1920 1080">
   <defs>
     <style>
+      @import url("./fonts/presto-fonts.css");
       .cls-1 {
-        font-family: 'Times New Roman', Times, serif;
+        font-family: 'IBM Plex Mono', monospace;
         font-weight: 600;
       }
 
@@ -20,7 +21,7 @@
       }
 
       .cls-5, .cls-2 {
-        font-family: 'Times New Roman', Times, serif;
+        font-family: 'IBM Plex Mono', monospace;
       }
 
       .cls-6 {
@@ -33,7 +34,7 @@
       }
 
       .cls-4 {
-        font-family: 'Times New Roman', Times, serif;
+        font-family: 'IBM Plex Mono', monospace;
         font-size: 99.1px;
         font-weight: 700;
       }
@@ -68,7 +69,7 @@
         <text class="cls-5" transform="translate(338.56 392.68)"><tspan class="cls-3" x="0" y="0">POSITION </tspan><tspan x="214.05" y="0">Design Intern</tspan></text>
         <text class="cls-5" transform="translate(1068.374 392.6767)"><tspan class="cls-3" x="0" y="0">START DATE </tspan><tspan x="261.62" y="0">2026.12.06</tspan></text>
         <text class="cls-2" transform="translate(332.58 557.84)"><tspan x="0" y="0">RESOURCE ACCESS</tspan><tspan x="0" y="132.84">MENTOR</tspan><tspan x="0" y="265.68">TRAINING</tspan></text>
-        <text class="cls-1" transform="translate(1292.4619 557.8373)"><tspan x="0" y="0">Limited</tspan><tspan x="119.55" y="132.84">None</tspan><tspan x="39.85" y="265.68">locked</tspan></text>
+        <text class="cls-1" text-anchor="end" transform="translate(1566.7 557.84)"><tspan x="0" y="0">Limited</tspan><tspan x="0" y="132.84">None</tspan><tspan x="0" y="265.68">locked</tspan></text>
         <text class="cls-4" transform="translate(333.85 275.52)">Initial condition</text>
         <line class="cls-9" x1="338.56" y1="474.75" x2="1566.7" y2="474.75"/>
         <line class="cls-9" x1="338.56" y1="602.31" x2="1566.7" y2="602.31"/>
