@@ -247,7 +247,8 @@ body{
 /* RESTART 버튼 */
 
 /* RESTART 버튼 */
-#restartButton {
+#restartButton,
+#playEndingButton {
   position: absolute;
 
   left: 50%;
@@ -286,14 +287,16 @@ body{
 }
 
 /* 영상이 끝나면 등장 */
-#restartButton.show {
+#restartButton.show,
+#playEndingButton:not([hidden]) {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
 }
 
 /* 마우스를 올렸을 때 */
-#restartButton:hover {
+#restartButton:hover,
+#playEndingButton:hover {
   background: rgba(0, 0, 0, 0.08);
 }
 
@@ -302,7 +305,7 @@ body{
 <style>
   #projectScrollHint { --project-scroll-hint-color: #0000ff; }
 </style>
-<script src="../assets/project-sounds.js"></script>
+<script src="../assets/project-sounds.js?v=scene-audio"></script>
 <script src="../assets/project-scroll-hint.js"></script>
 </head>
 
@@ -343,7 +346,6 @@ body{
     <video
       id="stageVideoPlayer"
       data-src="../assets/18-video.mp4"
-      muted
       playsinline
       preload="none"
     ></video>
@@ -355,6 +357,10 @@ body{
   <div id="stageVideoText">
     PRESS TO SUCCEED?
   </div>
+
+  <button id="playEndingButton" type="button" data-click-sound="none" hidden>
+    PLAY WITH SOUND
+  </button>
 
   <button id="restartButton" type="button">
     RESTART
@@ -694,6 +700,7 @@ redlineClose.addEventListener("click", () => {
   redlineClose.disabled = true;
   hand.hidden = false;
   handClickHint.hidden = false;
+  window.projectSounds?.preload("crayon");
 });
 
 async function revealRedlineWindow() {
@@ -1232,6 +1239,28 @@ hand.addEventListener(
   }
 );
 
+let crayonSound;
+let crayonIdleTimer;
+
+function stopCrayonSound() {
+  clearTimeout(crayonIdleTimer);
+  crayonSound?.abort();
+  crayonSound = undefined;
+}
+
+function playCrayonWhileMoving() {
+  if (!crayonSound) {
+    crayonSound = new AbortController();
+    window.projectSounds?.play("crayon", { signal: crayonSound.signal });
+  }
+
+  clearTimeout(crayonIdleTimer);
+  crayonIdleTimer = setTimeout(stopCrayonSound, 140);
+}
+
+hand.addEventListener("pointercancel", stopCrayonSound);
+window.addEventListener("pagehide", stopCrayonSound);
+
 function drawCrayonStroke(x1, x2, y) {
 
   const sceneRect =
@@ -1245,6 +1274,7 @@ function drawCrayonStroke(x1, x2, y) {
     Math.abs(x2 - x1);
 
   if(distance < 1) return;
+  playCrayonWhileMoving();
 
   const direction =
     x2 >= x1 ? 1 : -1;
@@ -1959,8 +1989,7 @@ async function triggerVideoBlink(){
      5. 이제 영상 재생
      ============================= */
 
-  video.play().catch(() => {});
-
+  await playEndingVideo();
 
   blinking = false;
 
@@ -2034,6 +2063,21 @@ const restartButton =
 
 const finalVideo =
   document.getElementById("stageVideoPlayer");
+const playEndingButton = document.getElementById("playEndingButton");
+
+async function playEndingVideo() {
+  finalVideo.muted = false;
+  try {
+    await finalVideo.play();
+    playEndingButton.hidden = true;
+  } catch (error) {
+    // A scroll does not always count as permission for audible autoplay.
+    if (error.name !== "NotAllowedError") console.warn("Ending video play failed", error);
+    playEndingButton.hidden = false;
+  }
+}
+
+playEndingButton.addEventListener("click", playEndingVideo);
 
 // 영상이 완전히 끝났을 때
 finalVideo.addEventListener("ended", () => {

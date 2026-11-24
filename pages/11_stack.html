@@ -178,7 +178,7 @@
 }
 
 </style>
-<script src="../assets/project-sounds.js"></script>
+<script src="../assets/project-sounds.js?v=scene-audio"></script>
 <script src="../assets/project-scroll-hint.js"></script>
 </head>
 
@@ -317,6 +317,7 @@ const POSITION = {
 };
 
 // 떨어지는 애니메이션
+const DROP_CONTACT = 0.75;
 const DROP_MS = 750;         // 떨어지는 시간
 const DROP_DISTANCE = 0.7;   // 시작 높이 (화면 높이 비율)
 const BOUNCE = 25;           // 착지 시 튀어 오르는 정도
@@ -728,7 +729,7 @@ async function dropNext() {
       {
         transform: makeTransform(p, bounce),
         opacity: 1,
-        offset: 0.75
+        offset: DROP_CONTACT
       },
       {
         transform: makeTransform(p, -bounce * 0.4),
@@ -748,6 +749,9 @@ async function dropNext() {
     }
   );
 
+
+  const impactAt = DROP_MS * DROP_CONTACT * distance / (distance + bounce);
+  const impactTimer = setTimeout(() => window.projectSounds?.play("folderDrop"), impactAt);
 
   // ==========================================
   // 2. 회색 파일은 첫 번째에만 위로 이동
@@ -798,6 +802,7 @@ async function dropNext() {
     ...(grayAnimation ? [grayAnimation.finished] : [])
   ]);
 
+  clearTimeout(impactTimer);
   element.style.transform = finalTransform;
   dropAnimation.cancel();
 
@@ -919,6 +924,7 @@ window.addEventListener("keydown", event => {
 // ==========================================
 
 async function prepare() {
+  window.projectSounds?.preload("folderDrop");
 
   await Promise.all(
     Object.values(objects).map(img =>

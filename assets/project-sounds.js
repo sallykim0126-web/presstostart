@@ -43,6 +43,8 @@
       gritTyping: { file: 'presto-grit-typing.m4a', volume: 0.8, offset: 0.25, loop: true },
       cardScan: { file: 'presto-card-beep.m4a', volume: 0.55, offset: 0.36 },
       clock: { file: 'presto-clock-ticking.m4a', volume: 0.28, offset: 0.05, duration: 4, playbackRate: 0.8 },
+      crayon: { file: 'presto-crayon.mp3', volume: 0.68, loop: true },
+      folderDrop: { file: 'presto-folder-drop.mp3', volume: 0.75, offset: 0.525 },
       systemError: { file: 'universfield-error-notification-04-199275.m4a', volume: 0.6 },
       folder: { file: 'presto-folder-flap.m4a', volume: 0.65, duration: 1.5 },
       polaroidPeel: { file: 'freesound_community-masking_tape_2-44104.m4a', volume: 0.8, offset: 0.32, duration: 0.8 },
