@@ -179,7 +179,7 @@
 
 </style>
 <script src="../assets/project-sounds.js?v=scene-audio"></script>
-<script src="../assets/project-scroll-hint.js"></script>
+<script src="../assets/project-scroll-hint.js?v=2"></script>
 </head>
 
 <body>
@@ -950,7 +950,8 @@ prepare();
 
 
 window.installProjectScrollHint(
-  () => ready && !busy && !blinkBusy && (introStage === 1 || !hasStartedScrolling),
+  () => ready && !busy && !blinkBusy && !nextPageRequested &&
+    (introStage === 1 || !hasStartedScrolling || lastDropFinishedAt !== null),
   { dark: true }
 );
 </script>

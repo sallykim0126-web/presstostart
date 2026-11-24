@@ -19,6 +19,7 @@
 </style>
 
   <title>09 — GRIT</title>
+  <link rel="stylesheet" href="../assets/fonts/presto-fonts.css">
 
   <!-- =========================================
        ★ 여기서 모든 설정을 변경하면 돼! ★
@@ -35,7 +36,7 @@
       TEXT_Y: 635,       // 커질수록 아래쪽
 
       // 3. 폰트 설정
-      FONT_FAMILY: "Roboto Slab, serif",
+      FONT_FAMILY: "IBM Plex Mono, monospace",
       FONT_SIZE: 80,
       FONT_WEIGHT: 400,
       FONT_STYLE: "normal",
@@ -141,7 +142,7 @@ GRIT_NEXT_TEXT_DELAY: 200,  // 원이 다 나온 후 다음 문장까지 대기
 
     /* 두 번째 문장 디자인 */
 #second-text {
-  font-family: Roboto Slab, serif;
+  font-family: "IBM Plex Mono", monospace;
   font-size: 80px;
   font-weight: 400;
   letter-spacing: 0px;
@@ -149,7 +150,7 @@ GRIT_NEXT_TEXT_DELAY: 200,  // 원이 다 나온 후 다음 문장까지 대기
 }
 
 #third-text {
-  font-family: "Roboto Slab", serif;
+  font-family: "IBM Plex Mono", monospace;
   font-size: 80px;
   font-weight: 400;
   letter-spacing: 0px;
@@ -157,24 +158,24 @@ GRIT_NEXT_TEXT_DELAY: 200,  // 원이 다 나온 후 다음 문장까지 대기
 }
 
 #fourth-text {
-  font-family: "Roboto Slab", serif;
+  font-family: "IBM Plex Mono", monospace;
   font-size: 95px;
-  font-weight: 1000;
+  font-weight: 700;
   letter-spacing: 0px;
   fill: #171717;
 }
 
 #fifth-text {
-  font-family: "Roboto Slab", serif;
+  font-family: "IBM Plex Mono", monospace;
   font-size: 95px;
-  font-weight: 1000;
+  font-weight: 700;
   letter-spacing: 0px;
   fill: #171717;
 }
 
 
 #sixth-text {
-  font-family: "Roboto Slab", serif;
+  font-family: "IBM Plex Mono", monospace;
   font-size: 80px;
   font-weight: 400;
   letter-spacing: 0px;
@@ -182,15 +183,15 @@ GRIT_NEXT_TEXT_DELAY: 200,  // 원이 다 나온 후 다음 문장까지 대기
 }
 
 #seventh-text {
-  font-family: "Roboto Slab", serif;
+  font-family: "IBM Plex Mono", monospace;
   font-size: 95px;
-  font-weight: 1000;
+  font-weight: 700;
   letter-spacing: 0px;
   fill: #171717;
 }
 
 #ninth-text {
-  font-family: "Roboto Slab", serif;
+  font-family: "IBM Plex Mono", monospace;
   font-size: 80px;
   font-weight: 400;
   letter-spacing: 0px;
@@ -198,8 +199,8 @@ GRIT_NEXT_TEXT_DELAY: 200,  // 원이 다 나온 후 다음 문장까지 대기
 }
 
 #tenth-text {
-  font-family: "Roboto Slab", serif;
-  font-size: 80px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 76px;
   font-weight: 400;
   letter-spacing: 0px;
   fill: #171717;
@@ -208,7 +209,7 @@ GRIT_NEXT_TEXT_DELAY: 200,  // 원이 다 나온 후 다음 문장까지 대기
 
   </style>
 <script src="../assets/project-sounds.js"></script>
-<script src="../assets/project-scroll-hint.js"></script>
+<script src="../assets/project-scroll-hint.js?v=2"></script>
 </head>
 
 
@@ -382,29 +383,6 @@ GRIT_NEXT_TEXT_DELAY: 200,  // 원이 다 나온 후 다음 문장까지 대기
 
 
 
-
-<!-- GRIT 위에 원본 26.svg 얹기 -->
-<svg
-  id="grit-mark"
-  x="1250"
-  y="820"
-  width="330"
-  height="155"
-  viewBox="390 455 370 290"
-  preserveAspectRatio="none"
-  style="opacity: 0; pointer-events: none;"
->
-  <image
-    href="../assets/26.svg"
-    x="0"
-    y="0"
-    width="1133.69"
-    height="1183.65"
-  />
-</svg>
-
-
-<!-- GRIT을 손으로 동그라미 치는 효과 -->
 
 <!-- GRIT을 손으로 동그라미 치는 효과 -->
 <svg
@@ -594,7 +572,24 @@ const GRIT_MARK_X = 0;        // 좌우 미세 조정
 const GRIT_MARK_Y = 0;        // 상하 미세 조정
 const GRIT_MARK_WIDTH = 0;    // 동그라미 너비 추가
 const GRIT_MARK_HEIGHT = 145; // 동그라미 높이
-const GRIT_DRAW_SPEED = 300;  // 그리는 시간 (0.9초)
+const GRIT_DRAW_SPEED = 620;
+let penSound;
+
+function stopPenSound() {
+  penSound?.abort();
+  penSound = undefined;
+}
+
+function playPenSound(duration) {
+  stopPenSound();
+  const stroke = new AbortController();
+  penSound = stroke;
+  window.projectSounds?.play("crayon", { signal: stroke.signal });
+  setTimeout(() => stroke.abort(), duration);
+}
+
+window.projectSounds?.preload("crayon");
+window.addEventListener("pagehide", stopPenSound);
 
 
 // ======================================
@@ -654,8 +649,16 @@ function drawGritMark() {
     MARK_HEIGHT
   );
 
-  // 원본 SVG를 한 번에 표시
-  mark.style.transition = "opacity 0.1s ease"; mark.style.opacity = "1";
+  const path = document.getElementById("grit-draw-path");
+  const length = path.getTotalLength();
+  path.style.strokeDasharray = length;
+  mark.style.opacity = "1";
+  playPenSound(GRIT_DRAW_SPEED);
+  const stroke = path.animate(
+    { strokeDashoffset: [length, 0] },
+    { duration: GRIT_DRAW_SPEED, easing: "ease-in-out" }
+  );
+  stroke.finished.then(() => mark.querySelector("image").removeAttribute("mask"));
 }
 
 
@@ -865,9 +868,13 @@ function typeSeventh() {
 
   // 타이핑 완료 0.3초 후 밑줄 등장
   setTimeout(() => {
-    document.getElementById(
-      "consciousness-underline"
-    ).style.opacity = "1";
+    const underline = document.getElementById("consciousness-underline");
+    underline.style.opacity = "1";
+    underline.animate(
+      { clipPath: ["inset(0 100% 0 0)", "inset(0 0 0 0)"] },
+      { duration: GRIT_DRAW_SPEED, easing: "ease-out" }
+    );
+    playPenSound(GRIT_DRAW_SPEED);
   }, 300);
 
   // 밑줄이 나타난 다음 화살표 등장
@@ -920,7 +927,7 @@ function typeEighth() {
 function typeNinth() {
 
   const ninth = document.getElementById("ninth-text");
-  const message = "SO MAYBE ...";
+  const message = "SO MAYBE…";
 
   let i = 0;
 

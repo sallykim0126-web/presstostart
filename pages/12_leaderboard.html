@@ -279,7 +279,7 @@ html, body {
 
 </style>
 <script src="../assets/project-sounds.js"></script>
-<script src="../assets/project-scroll-hint.js"></script>
+<script src="../assets/project-scroll-hint.js?v=2"></script>
 </head>
 
 <body>
@@ -523,8 +523,11 @@ function animateFolder() {
   requestAnimationFrame(tick);
 }
 
+// Ignore wheel inertia from the preceding folder so this scene can show its cue.
+const folderInputReadyAt = performance.now() + 450;
+
 function scrollFolder(pixels) {
-  if (pixels <= 0 || requestedProgress === 1) return;
+  if (performance.now() < folderInputReadyAt || pixels <= 0 || requestedProgress === 1) return;
   prepareFolderAssets();
   requestedProgress = clamp(requestedProgress + pixels / window.innerHeight);
   if (!animatingFolder) animateFolder();

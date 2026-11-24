@@ -96,30 +96,6 @@ body{
   pointer-events: none;
 }
 
-#redlineClose {
-  position:absolute;
-  left:67.5%;
-  top:29.6%;
-  width:2.6%;
-  aspect-ratio:1;
-  padding:0;
-  border:1px solid #0000f2;
-  background:#bcbcbc;
-  color:#171717;
-  z-index:60;
-  cursor:pointer;
-}
-
-#redlineClose svg {
-  display:block;
-  width:100%;
-  height:100%;
-}
-
-#redlineClose:disabled {
-  cursor:default;
-}
-
 .hand.dragging{
   cursor:grabbing;
 }
@@ -306,7 +282,7 @@ body{
   #projectScrollHint { --project-scroll-hint-color: #0000ff; }
 </style>
 <script src="../assets/project-sounds.js?v=scene-audio"></script>
-<script src="../assets/project-scroll-hint.js"></script>
+<script src="../assets/project-scroll-hint.js?v=2"></script>
 </head>
 
 
@@ -317,17 +293,11 @@ body{
 <div class="scene">
 
   <img
-    src="../assets/40-10.webp"
+    src="../assets/40-18.webp"
     class="base"
     id="baseImage"
     alt=""
   >
-
-  <button type="button" id="redlineClose" aria-label="Close pop-up and reveal the hand" hidden>
-    <svg viewBox="0 0 7 7" aria-hidden="true" shape-rendering="crispEdges">
-      <path fill="currentColor" d="M1 1h1v1H1z M5 1h1v1H5z M2 2h1v1H2z M4 2h1v1H4z M3 3h1v1H3z M2 4h1v1H2z M4 4h1v1H4z M1 5h1v1H1z M5 5h1v1H5z"/>
-    </svg>
-  </button>
 
   <canvas id="drawCanvas"></canvas>
 
@@ -692,32 +662,15 @@ const stage18Text =
 const baseImage =
   document.getElementById("baseImage");
 
-const INTRO_HOLD_MS = 3000;
-const redlineClose = document.getElementById("redlineClose");
 const handClickHint = document.getElementById("handClickHint");
 
-redlineClose.addEventListener("click", () => {
-  redlineClose.disabled = true;
+window.projectSounds?.preload("crayon");
+
+Promise.allSettled([baseImage.decode(), hand.decode()]).then(() => {
   hand.hidden = false;
   handClickHint.hidden = false;
-  window.projectSounds?.preload("crayon");
-});
-
-async function revealRedlineWindow() {
-  const popup = new Image();
-  popup.src = "../assets/40-18.webp";
-  await Promise.all([
-    baseImage.decode().then(() => new Promise(resolve => setTimeout(resolve, INTRO_HOLD_MS))),
-    popup.decode()
-  ]);
-
-  baseImage.src = popup.src;
-  await baseImage.decode();
-  redlineClose.hidden = false;
   window.projectSounds?.play("systemError");
-}
-
-revealRedlineWindow().catch(console.error);
+});
 
 function showStage18(){
 
@@ -1525,7 +1478,6 @@ function showStage18(){
 
   /* 손 숨기기 */
   hand.style.display = "none";
-  redlineClose.hidden = true;
 
 
   /* 18 이미지로 변경 */

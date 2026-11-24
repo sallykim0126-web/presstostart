@@ -60,11 +60,17 @@
   align-items: center;
   justify-content: center;
 
-  background: #000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 420ms ease-in-out;
 }
 
 #glitchOverlay.active {
   display: flex;
+}
+
+#glitchOverlay.visible {
+  opacity: 1;
 }
 
 #glitchVideo {
@@ -451,12 +457,12 @@ body.crt-shutdown::after {
   </style>
 <style>
   #projectScrollHint {
-    --project-scroll-hint-color: #000fff;
+    --project-scroll-hint-color: #0000ff;
     z-index: 10001;
   }
 </style>
 <script src="../assets/project-sounds.js"></script>
-<script src="../assets/project-scroll-hint.js"></script>
+<script src="../assets/project-scroll-hint.js?v=2"></script>
 </head>
 
 <body>
@@ -840,12 +846,14 @@ async function playGlitchVideo() {
   // 영상 장면이 실제로 시작되기 직전에만 네트워크 요청을 시작한다.
   if (!video.src) {
     video.src = video.dataset.src;
-    video.load();
   }
 
   overlay.classList.add("active");
   video.currentTime = 0;
-  showGlitchScrollHint = true;
+  video.addEventListener("playing", () => {
+    overlay.classList.add("visible");
+    showGlitchScrollHint = true;
+  }, { once: true, signal });
 
   window.addEventListener("wheel", event => {
     if (event.deltaY !== 0) hideScrollHint();
@@ -876,7 +884,7 @@ async function playGlitchVideo() {
   hideScrollHint();
 
   if (!finished) {
-    overlay.classList.remove("active");
+    overlay.classList.remove("active", "visible");
     return;
   }
 
@@ -1110,6 +1118,10 @@ async function playGlitchVideo() {
 
       showRow(3);
 
+      const glitchVideo = document.getElementById("glitchVideo");
+      glitchVideo.preload = "auto";
+      glitchVideo.src = glitchVideo.dataset.src;
+
 
       // 25-09 → 25-10 : 0.1초
       await wait(100);
@@ -1156,8 +1168,7 @@ for (
   
 if (i === 13) {
 
-  // 기존 글리치 영상 + 컴퓨터 종료 효과
-  await wait(MOVE_DURATION);
+  // 마지막 줄이 움직이는 동안 영상이 겹쳐 들어온다.
   await playGlitchVideo();
 
   if (window.parent !== window) {
