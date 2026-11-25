@@ -44,7 +44,7 @@ html, body {
   transform: translate(-50%, -50%);
 
   overflow: hidden;
-  background: #dddddd;
+  background: #c9c9c9 url("../assets/presto-gray-wood.webp") center / cover no-repeat;
 }
 
 
@@ -279,7 +279,7 @@ html, body {
 
 
 </style>
-<script src="../assets/project-sounds.js?v=compact-audio"></script>
+<script src="../assets/project-sounds.js?v=office-loop"></script>
 <script src="../assets/project-scroll-hint.js?v=2"></script>
 <script src="../assets/project-blink.js"></script>
 </head>
@@ -513,6 +513,7 @@ function showScene15() {
 
   scene14.hidden = true;
   scene15.hidden = false;
+  window.projectSounds?.play("tryHarderBoom");
 
   scene = 15;
 
@@ -677,7 +678,6 @@ blink.style.visibility = "hidden";
 // Start the two-second hold once the parent blink has opened.
 if (window.parent === window) {
   window.addEventListener("load", () => {
-    window.projectSounds?.play("tryHarderBoom");
     setTimeout(showScene15, AUTO_CHANGE_MS);
   }, { once: true });
 } else {
@@ -685,7 +685,6 @@ if (window.parent === window) {
     if (event.source !== window.parent || event.origin !== window.location.origin ||
         event.data?.type !== "LEADER_QUOTE_VISIBLE") return;
     window.removeEventListener("message", startQuoteHold);
-    window.projectSounds?.play("tryHarderBoom");
     setTimeout(showScene15, AUTO_CHANGE_MS);
   }
   window.addEventListener("message", startQuoteHold);

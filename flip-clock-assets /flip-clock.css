@@ -2,7 +2,7 @@
 /* 06 페이지 전체 배경 */
 html,
 body {
-  background: url("./12-17.svg")
+  background: url("./12-17.svg?v=registered-shadow")
     center center / cover no-repeat fixed !important;
 }
 
@@ -23,7 +23,7 @@ body {
 }
 
 #opflip-time-limit .opflip-bg,#opflip-time-limit .opflip-line{position:absolute;display:block;inset:0;width:1920px;height:1080px;pointer-events:none;user-select:none}
-#opflip-time-limit .opflip-bg{z-index:1}
+#opflip-time-limit .opflip-bg{z-index:1;filter:drop-shadow(0 8px 5px #000b) drop-shadow(0 17px 12px #0007)}
 #opflip-time-limit .opflip-line{z-index:8;opacity:.96}
 #opflip-time-limit .opflip-card{position:absolute;z-index:4;perspective:1150px;transform-style:preserve-3d}
 #opflip-time-limit .opflip-half{position:absolute;left:0;width:100%;height:50%;overflow:hidden;backface-visibility:hidden;transform-style:preserve-3d}

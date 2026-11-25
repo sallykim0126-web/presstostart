@@ -329,7 +329,7 @@ font: clamp(14px, 1.2vw, 20px) monospace;
   pointer-events: none;
 }
 #leaderClickHint:not(.visible) { visibility: hidden; }
-</style><script src="../assets/project-sounds.js?v=compact-audio"></script>
+</style><script src="../assets/project-sounds.js?v=office-loop"></script>
 <script src="../assets/project-scroll-hint.js?v=2"></script>
 </head><body>
 <section id="scroll"><div id="sticky"><div id="scene">
@@ -337,10 +337,10 @@ font: clamp(14px, 1.2vw, 20px) monospace;
 <div id="dark"></div>
 <img id="leaderClickHint" src="../assets/41.svg" alt="" aria-hidden="true">
 <div id="group">
-  <img id="leader" src="06-01.webp">
+  <img id="leader" src="06-01-hd.webp">
   <img id="slidePaper" src="07-12.svg" alt="">
   <div id="back">
-  <img src="05-03 2.webp" alt="">
+  <img src="effort-open-hd.webp" alt="">
 </div>
   <img id="front" src="05-05 2.webp">
 <div id="hinge"></div>
@@ -556,26 +556,6 @@ function resizeRank() {
 window.addEventListener('resize', resizeRank);
 resizeRank();
 
-// 보여줄 순위 선택
-function visibleRanks(total, myRank) {
-  if (total <= 10) {
-    return Array.from({length:total}, (_,i) => i+1);
-  }
-
-  const selected = new Set([
-    1,2,3,4,5,
-    total-4,total-3,total-2,total-1,total
-  ]);
-
-  if (myRank >= 1 && myRank <= total) {
-    selected.add(myRank);
-  }
-
-  return [...selected]
-    .filter(n => n >= 1 && n <= total)
-    .sort((a,b) => a-b);
-}
-
 // 순위표 그리기
 function renderRanks(data) {
   rankLines.replaceChildren();
@@ -585,24 +565,10 @@ function renderRanks(data) {
     return;
   }
 
-  const mine = data.find(row => row.is_you);
-  const selected = new Set(
-    visibleRanks(data.length, mine?.rank)
-  );
-
-  const display = [];
-  let last = 0;
-
-  for (const item of data) {
-    if (!selected.has(item.rank)) continue;
-
-    if (last && item.rank > last + 1) {
-      display.push({gap:true});
-    }
-
-    display.push(item);
-    last = item.rank;
-  }
+  const sorted = [...data].sort((a, b) => Number(a.rank) - Number(b.rank));
+  const display = sorted.filter(item => Number(item.rank) <= 20);
+  const mine = sorted.find(item => item.is_you);
+  if (mine && Number(mine.rank) > 20) display.push({gap:true}, mine);
 
   const spacing = Math.min(
     57,
@@ -617,6 +583,7 @@ function renderRanks(data) {
       + (item.gap ? ' gap' : '');
 
     line.style.top = (205 + i*spacing) + 'px';
+    line.style.height = Math.min(41, spacing) + 'px';
 
     const values = item.gap
       ? ['···','','','','','','']

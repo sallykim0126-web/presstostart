@@ -304,7 +304,7 @@ body{
 <style>
   #projectScrollHint { --project-scroll-hint-color: #0000ff; }
 </style>
-<script src="../assets/project-sounds.js?v=compact-audio"></script>
+<script src="../assets/project-sounds.js?v=office-loop"></script>
 <script src="../assets/project-scroll-hint.js?v=2"></script>
 <script src="../assets/project-blink.js"></script>
 </head>
@@ -347,7 +347,7 @@ body{
 
     <video
       id="stageVideoPlayer"
-      data-src="../assets/18-video.mp4"
+      data-src="../assets/18-video-extended.mp4"
       playsinline
       preload="none"
     ></video>
@@ -364,7 +364,7 @@ body{
     PLAY WITH SOUND
   </button>
 
-  <button id="restartButton" type="button">
+  <button id="restartButton" type="button" data-click-sound="none">
     RESTART
   </button>
 
@@ -1868,11 +1868,16 @@ finalVideo.addEventListener("ended", () => {
    RESTART 클릭 → 첫 페이지로 이동
 ========================================= */
 
-restartButton.addEventListener("click", () => {
+window.projectSounds?.preload("click");
+restartButton.addEventListener("click", async () => {
+  if (restartButton.disabled) return;
+  restartButton.disabled = true;
+  await Promise.race([window.projectSounds?.play("click"), pause(220)]);
+  await pause(170);
 
   // 전체 프로젝트의 첫 번째 페이지부터 다시 시작
   const startURL = new URL(
-    "../index.html",
+    "../index.html?v=timing-6",
     window.location.href
   );
 

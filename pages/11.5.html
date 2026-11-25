@@ -216,7 +216,7 @@
   display: block;
 }
   </style>
-<script src="../assets/project-sounds.js?v=compact-audio"></script>
+<script src="../assets/project-sounds.js?v=office-loop"></script>
 <script src="../assets/project-scroll-hint.js?v=2"></script>
 <script src="../assets/project-blink.js"></script>
 </head>
@@ -229,7 +229,7 @@
   <img
     class="scene-image base-image"
     id="base"
-    src="../assets/31.webp"
+    src="../assets/31-hd.webp"
     alt=""
     draggable="false"
   >
@@ -298,6 +298,39 @@ const blink =
     */
    let currentStage = 0;
 let blinking = false;
+let officeSound;
+let officeVisible = window.parent === window;
+
+window.projectSounds?.preload("officeAmbience");
+
+async function startOfficeSound() {
+  if (!officeVisible || currentStage !== 0 || officeSound) return;
+  const playback = new AbortController();
+  officeSound = playback;
+  const started = await window.projectSounds?.play("officeAmbience", { signal: playback.signal });
+  if (!started && officeSound === playback) officeSound = undefined;
+}
+
+function stopOfficeSound() {
+  officeSound?.abort();
+  officeSound = undefined;
+}
+
+if (officeVisible) {
+  window.addEventListener("load", startOfficeSound, { once: true });
+} else {
+  function showOffice(event) {
+    if (event.source !== window.parent || event.origin !== window.location.origin ||
+        event.data?.type !== "OFFICE_SCENE_VISIBLE") return;
+    window.removeEventListener("message", showOffice);
+    officeVisible = true;
+    startOfficeSound();
+  }
+  window.addEventListener("message", showOffice);
+}
+window.addEventListener("pointerup", startOfficeSound);
+window.addEventListener("keydown", startOfficeSound);
+window.addEventListener("pagehide", stopOfficeSound);
     
 
     /* =====================================
@@ -322,6 +355,8 @@ let blinking = false;
       );
 
       currentStage = open ? 1 : 0;
+      if (open) stopOfficeSound();
+      else startOfficeSound();
     }
 
 

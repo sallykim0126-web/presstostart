@@ -336,7 +336,7 @@ body.crt-shutdown::after {
     z-index: 10001;
   }
 </style>
-<script src="../assets/project-sounds.js?v=compact-audio"></script>
+<script src="../assets/project-sounds.js?v=office-loop"></script>
 <script src="../assets/project-scroll-hint.js?v=2"></script>
 <script src="../assets/project-blink.js"></script>
 </head>
@@ -356,7 +356,7 @@ body.crt-shutdown::after {
 </div>
 
 
-<!-- 9번째 반복에서 등장하는 글리치 영상 -->
+<!-- 마지막 줄에서 겹쳐 들어오는 글리치 영상 -->
 <div id="glitchOverlay">
   <video
     id="glitchVideo"
@@ -389,13 +389,13 @@ body.crt-shutdown::after {
     const ROW_STEP = 217.62;
 
     // 마지막에 추가할 글씨 줄 수
-    const REPEAT_COUNT = 15;
+    const REPEAT_COUNT = 18;
 
-    // 마지막 반복 간격: 0.1초
-    const FAST_INTERVAL = 100;
+    // 마지막 반복 간격
+    const FAST_INTERVAL = 155;
 
     // 마지막 글씨가 흘러가는 속도
-    const MOVE_DURATION = 85;
+    const MOVE_DURATION = 125;
 
     const NS = "http://www.w3.org/2000/svg";
 
@@ -975,7 +975,7 @@ for (
 
   // 전체 9번째 TRY HARDER가 등장한 직후
   
-if (i === 9) {
+if (i === totalRows - 1) {
 
   // 마지막 줄이 움직이는 동안 영상이 겹쳐 들어온다.
   await playGlitchVideo();
@@ -986,7 +986,7 @@ if (i === 9) {
     drawSequenceEye(0);
     sequenceBlink.style.visibility = "visible";
     await tweenSequenceEye(0, 1, BLINK_CLOSE_MS);
-    await wait(BLINK_HOLD_MS + 1000);
+    await wait(BLINK_HOLD_MS + 500);
     window.location.href = "11_stack.html?blink=sequence";
   }
 

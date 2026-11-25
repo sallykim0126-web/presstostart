@@ -49,6 +49,7 @@
       highlighter: { file: 'oxidvideos-highlighter-on-paper-sfx-483867.mp3', volume: 0.68, loop: true },
       glitchStatic: { file: 'kave_msri-glitch-sfx-312910.mp3', volume: 0.66 },
       tvShutdown: { file: 'dragon-studio-tv-shutdown-2-386173.mp3', volume: 0.65 },
+      officeAmbience: { file: 'presto-office-loop.m4a', volume: 0.42, loop: true, duration: 5 },
       folderDrop: { file: 'presto-folder-drop.mp3', volume: 0.75, offset: 0.525 },
       systemError: { file: 'universfield-error-notification-04-199275.m4a', volume: 0.6 },
       folder: { file: 'presto-folder-flap.m4a', volume: 0.65, duration: 1.5 },
@@ -122,6 +123,7 @@
         if (effect.loop) {
           source.loop = true;
           source.loopStart = offset;
+          source.loopEnd = offset + clipDuration * rate;
           source.start(startAt, offset);
         } else {
           if (effect.duration || sliced) {
@@ -131,6 +133,7 @@
           }
           source.start(startAt, offset + clipDuration * fromProgress * rate, duration * rate);
         }
+        return true;
       }
     };
   }
