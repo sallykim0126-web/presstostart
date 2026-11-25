@@ -588,6 +588,16 @@ function playPenSound(duration) {
   setTimeout(() => stroke.abort(), duration);
 }
 
+function revealArrow(id) {
+  const arrow = document.getElementById(id);
+  arrow.style.opacity = "1";
+  arrow.animate(
+    { clipPath: ["inset(0 100% 0 0)", "inset(0 0 0 0)"] },
+    { duration: GRIT_DRAW_SPEED, easing: "ease-out" }
+  );
+  playPenSound(GRIT_DRAW_SPEED);
+}
+
 window.projectSounds?.preload("crayon");
 window.addEventListener("pagehide", stopPenSound);
 
@@ -801,7 +811,7 @@ if (i >= message.length) {
 
   // 파란색 화살표 등장
   setTimeout(() => {
-    document.getElementById("samples-arrow").style.opacity = "1";
+    revealArrow("samples-arrow");
   }, 300);
 
   // 화살표가 나타난 뒤 여섯 번째 문장 준비
@@ -879,7 +889,7 @@ function typeSeventh() {
 
   // 밑줄이 나타난 다음 화살표 등장
 setTimeout(() => {
-  document.getElementById("underline-arrow").style.opacity = "1";
+  revealArrow("underline-arrow");
 
   setTimeout(() => {
     typeEighth();

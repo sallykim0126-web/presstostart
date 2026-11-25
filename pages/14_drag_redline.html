@@ -1116,7 +1116,7 @@ hand.style.top =
 
   else {
     drawingComplete = true;
-    showStage18();
+    // Wait until the hand is released so the completed stroke stays visible.
   }
 }
 
@@ -1125,6 +1125,7 @@ hand.addEventListener(
 
   () => {
 
+    if (drawingComplete && !stage18Shown) showStage18();
     dragging = false;
 
     hand.classList.remove(

@@ -469,14 +469,14 @@ function canOpenRanks() {
 }
 let coverSoundPlayed = false;
 function draw(p){
-  if (p > TUNE.flipStart && !coverSoundPlayed) {
+  const t=ease((p-TUNE.flipStart)/(TUNE.flipEnd-TUNE.flipStart));
+  if (t >= .5 && !coverSoundPlayed) {
     coverSoundPlayed = true;
     window.projectSounds?.play('folder');
-  } else if (p <= TUNE.flipStart - 0.03) {
+  } else if (t < .47) {
     coverSoundPlayed = false;
   }
 
-  const t=ease((p-TUNE.flipStart)/(TUNE.flipEnd-TUNE.flipStart));
   const x=TUNE.startX+(TUNE.endX-TUNE.startX)*smooth(t);
   const y=TUNE.startY+(TUNE.endY-TUNE.startY)*smooth(t);
   group.style.transform=`translate3d(${x}px,${y}px,0)`;
