@@ -389,6 +389,7 @@ html, body {
 
 // 첫 번째 이미지가 유지되는 시간
 const AUTO_CHANGE_MS = 2000;
+window.projectSounds?.preload("tryHarderBoom");
 
 // 눈 감고 / 정지 / 뜨는 시간
 // 기존 03_blink 코드 기준
@@ -675,12 +676,16 @@ blink.style.visibility = "hidden";
 
 // Start the two-second hold once the parent blink has opened.
 if (window.parent === window) {
-  window.addEventListener("load", () => setTimeout(showScene15, AUTO_CHANGE_MS), { once: true });
+  window.addEventListener("load", () => {
+    window.projectSounds?.play("tryHarderBoom");
+    setTimeout(showScene15, AUTO_CHANGE_MS);
+  }, { once: true });
 } else {
   function startQuoteHold(event) {
     if (event.source !== window.parent || event.origin !== window.location.origin ||
         event.data?.type !== "LEADER_QUOTE_VISIBLE") return;
     window.removeEventListener("message", startQuoteHold);
+    window.projectSounds?.play("tryHarderBoom");
     setTimeout(showScene15, AUTO_CHANGE_MS);
   }
   window.addEventListener("message", startQuoteHold);

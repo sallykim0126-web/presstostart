@@ -333,7 +333,7 @@ font: clamp(14px, 1.2vw, 20px) monospace;
 <script src="../assets/project-scroll-hint.js?v=2"></script>
 </head><body>
 <section id="scroll"><div id="sticky"><div id="scene">
-  <img id="bg" src="05-04 2.webp">
+  <img id="bg" src="05-04 2.svg">
 <div id="dark"></div>
 <img id="leaderClickHint" src="../assets/41.svg" alt="" aria-hidden="true">
 <div id="group">
@@ -563,8 +563,8 @@ function visibleRanks(total, myRank) {
   }
 
   const selected = new Set([
-    1,2,3,4,
-    total-3,total-2,total-1,total
+    1,2,3,4,5,
+    total-4,total-3,total-2,total-1,total
   ]);
 
   if (myRank >= 1 && myRank <= total) {
@@ -605,8 +605,8 @@ function renderRanks(data) {
   }
 
   const spacing = Math.min(
-    80,
-    650 / Math.max(1, display.length - 1)
+    57,
+    684 / Math.max(1, display.length - 1)
   );
 
   display.forEach((item,i) => {

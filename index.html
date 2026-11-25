@@ -58,7 +58,7 @@
 
 <iframe
   id="pageFrame"
-  src="pages/01_presto.html?v=timing-4"
+  src="pages/01_presto.html?v=timing-5"
   title="Interactive scene"
 ></iframe>
 
@@ -168,7 +168,7 @@ const blink =
 
 
 let currentPage = 0;
-const sceneURL = path => path + '?v=timing-4';
+const sceneURL = path => path + '?v=timing-5';
 
 frame.addEventListener('load', () => warmNextPage(currentPage), { once: true });
 
@@ -210,8 +210,8 @@ function drawEye(p) {
    눈 애니메이션
    ========================================= */
 
-function eye(from, to, duration) {
-  if (from === 0 && to === 1) window.projectSounds?.play('blink');
+function eye(from, to, duration, withSound = true) {
+  if (withSound && from === 0 && to === 1) window.projectSounds?.play('blink');
 
   return new Promise(resolve => {
 
@@ -335,7 +335,8 @@ async function goTo(index){
     await eye(
       0,
       1,
-      blinkCloseMs
+      blinkCloseMs,
+      !enteringStack
     );
 
 
@@ -479,9 +480,7 @@ window.addEventListener(
       'STARTING_COMPLETE'
     ){
 
-      if(currentPage === 5){
-        goTo(6);
-      }
+      // The starting card is ready; wait for a user scroll.
 
       return;
 

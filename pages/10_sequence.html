@@ -360,7 +360,7 @@ body.crt-shutdown::after {
 <div id="glitchOverlay">
   <video
     id="glitchVideo"
-    data-src="../assets/glitch.mp4"
+    data-src="../assets/glitch-replacement.mp4"
     preload="none"
     muted
     playsinline
@@ -408,7 +408,9 @@ body.crt-shutdown::after {
 ====================================== */
 
 const introArt = document.getElementById("intro-art");
-window.projectSounds?.preload("tryHarderRow");
+window.projectSounds?.preload("tryHarderImpact");
+window.projectSounds?.preload("glitchStatic");
+window.projectSounds?.preload("tvShutdown");
 const introArtReady = introArt.decode().catch(() => {});
 const introSceneVisible = new Promise(resolve => {
   if (window.parent === window) {
@@ -646,7 +648,9 @@ async function playGlitchVideo() {
 
   overlay.classList.add("active");
   video.currentTime = 0;
+  video.muted = true;
   video.addEventListener("playing", () => {
+    window.projectSounds?.play("glitchStatic");
     overlay.classList.add("visible");
     showGlitchScrollHint = true;
   }, { once: true, signal });
@@ -663,6 +667,10 @@ async function playGlitchVideo() {
 
   const finished = await new Promise(resolve => {
     video.addEventListener("timeupdate", () => {
+      if (video.currentTime >= 3.004) {
+        resolve(true);
+        return;
+      }
       if (Number.isFinite(video.duration) &&
           video.duration - video.currentTime <= 0.25) {
         resolve(true);
@@ -679,6 +687,8 @@ async function playGlitchVideo() {
   interactions.abort();
   hideScrollHint();
 
+  video.pause();
+
   if (!finished) {
     overlay.classList.remove("active", "visible");
     return;
@@ -687,6 +697,7 @@ async function playGlitchVideo() {
   const shutdown = new Promise(resolve => {
     overlay.addEventListener("animationend", resolve, { once: true });
   });
+  window.projectSounds?.play("tvShutdown");
   document.body.classList.add("crt-shutdown");
   overlay.classList.add("crt-shutting");
   await Promise.race([shutdown, wait(950)]);
@@ -833,7 +844,7 @@ async function playGlitchVideo() {
 
       await Promise.all([introArtReady, introRevealDelay]);
       introArt.hidden = false;
-      window.projectSounds?.play("tryHarderRow");
+      window.projectSounds?.play("tryHarderImpact");
       await waitForIntroSwipe();
 
       await blinkTo(() => {
@@ -964,7 +975,7 @@ for (
 
   // 전체 9번째 TRY HARDER가 등장한 직후
   
-if (i === 13) {
+if (i === 9) {
 
   // 마지막 줄이 움직이는 동안 영상이 겹쳐 들어온다.
   await playGlitchVideo();

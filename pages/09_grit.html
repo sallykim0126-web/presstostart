@@ -94,6 +94,7 @@ GRIT_NEXT_TEXT_DELAY: 200,  // 원이 다 나온 후 다음 문장까지 대기
     /* 긴 종이 배경 */
     #paper-page {
       position: relative;
+      margin-top: -2px;
       width: 100%;
     }
 
@@ -584,7 +585,7 @@ function playPenSound(duration) {
   stopPenSound();
   const stroke = new AbortController();
   penSound = stroke;
-  window.projectSounds?.play("crayon", { signal: stroke.signal });
+  window.projectSounds?.play("highlighter", { signal: stroke.signal });
   setTimeout(() => stroke.abort(), duration);
 }
 
@@ -598,7 +599,7 @@ function revealArrow(id) {
   playPenSound(GRIT_DRAW_SPEED);
 }
 
-window.projectSounds?.preload("crayon");
+window.projectSounds?.preload("highlighter");
 window.addEventListener("pagehide", stopPenSound);
 
 
