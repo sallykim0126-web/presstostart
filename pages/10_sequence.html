@@ -250,131 +250,6 @@ body.crt-shutdown::after {
 }
 
 
-/* ===================================
-   CRT LENS SHUTDOWN
-   볼록렌즈 형태로 수축하며 종료
-=================================== */
-
-/* 화면 자체가 타원형으로 오므라듦 */
-#glitchOverlay.crt-shutting {
-  transform: none !important;
-  transform-origin: center center;
-
-  animation: lensShutdown 0.55s
-    cubic-bezier(0.65, 0, 1, 1) forwards !important;
-
-  will-change: clip-path, filter;
-}
-
-@keyframes lensShutdown {
-
-  0% {
-    clip-path: ellipse(85% 95% at 50% 50%);
-    filter: brightness(1);
-    opacity: 1;
-  }
-
-  15% {
-    clip-path: ellipse(80% 85% at 50% 50%);
-    filter: brightness(1.3);
-  }
-
-  35% {
-    clip-path: ellipse(65% 40% at 50% 50%);
-    filter: brightness(1.5);
-  }
-
-  55% {
-    clip-path: ellipse(53% 12% at 50% 50%);
-    filter: brightness(2);
-  }
-
-  75% {
-    clip-path: ellipse(35% 1.5% at 50% 50%);
-    filter: brightness(3);
-  }
-
-  90% {
-    clip-path: ellipse(10% 0.4% at 50% 50%);
-    opacity: 1;
-  }
-
-  100% {
-    clip-path: ellipse(0% 0% at 50% 50%);
-    opacity: 0;
-  }
-}
-
-/* 종료 직전 중앙에 나타나는 빛 */
-body.crt-shutdown::after {
-  content: "";
-  position: fixed;
-
-  top: 50%;
-  left: 50%;
-
-  width: 65vw;
-  height: 10px;
-
-  border-radius: 50%;
-
-  background: radial-gradient(
-    ellipse at center,
-    #ffffff 0%,
-    #e5eeff 30%,
-    rgba(255,255,255,0.5) 60%,
-    transparent 85%
-  );
-
-  box-shadow:
-    0 0 12px rgba(255,255,255,0.8),
-    0 0 30px rgba(200,220,255,0.5);
-
-  z-index: 10003;
-  pointer-events: none;
-  opacity: 0;
-
-  transform:
-    translate(-50%, -50%)
-    scaleX(0);
-
-  animation: lensFlash 0.25s 0.30s
-    ease-out forwards !important;
-}
-
-/* 타원형 빛이 중앙의 점으로 수축 */
-@keyframes lensFlash {
-
-  0% {
-    opacity: 0;
-    transform:
-      translate(-50%, -50%)
-      scaleX(0.2) scaleY(1);
-  }
-
-  25% {
-    opacity: 1;
-    transform:
-      translate(-50%, -50%)
-      scaleX(1) scaleY(0.7);
-  }
-
-  65% {
-    opacity: 0.9;
-    transform:
-      translate(-50%, -50%)
-      scaleX(0.4) scaleY(0.4);
-  }
-
-  100% {
-    opacity: 0;
-    transform:
-      translate(-50%, -50%)
-      scaleX(0) scaleY(0);
-  }
-}
-
-
 /* ================================
    CRT SHUTDOWN — LIGHT FLARE
 ================================ */
@@ -814,7 +689,7 @@ async function playGlitchVideo() {
   });
   document.body.classList.add("crt-shutdown");
   overlay.classList.add("crt-shutting");
-  await Promise.race([shutdown, wait(650)]);
+  await Promise.race([shutdown, wait(950)]);
   video.pause();
 }
 
@@ -951,8 +826,7 @@ async function playGlitchVideo() {
         const scale = 1 + 0.65 * (1 - 0.83 ** index);
         track.style.setProperty("--row-scale", scale);
         rows[index].style.visibility = "visible";
-        if (index < 4) window.projectSounds?.play("tryHarderRow");
-        if ([6, 9, 12].includes(index)) {
+        if (index < 4 || [6, 9, 12].includes(index)) {
           window.projectSounds?.play("tryHarderImpact", { toProgress: 0.22 });
         }
       }

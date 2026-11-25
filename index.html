@@ -58,7 +58,7 @@
 
 <iframe
   id="pageFrame"
-  src="pages/01_presto.html?v=timing-2"
+  src="pages/01_presto.html?v=timing-3"
   title="Interactive scene"
 ></iframe>
 
@@ -168,7 +168,7 @@ const blink =
 
 
 let currentPage = 0;
-const sceneURL = path => path + '?v=timing-2';
+const sceneURL = path => path + '?v=timing-3';
 
 frame.addEventListener('load', () => warmNextPage(currentPage), { once: true });
 
@@ -320,7 +320,7 @@ async function goTo(index){
   const useShortBlink =
     enteringStack || (fromPage === 'pages/11_stack.html' && toPage === 'pages/11.5.html');
   const blinkCloseMs = useShortBlink ? 550 : CLOSE_MS;
-  const blinkHoldMs = (useShortBlink ? 150 : HOLD_MS) + (enteringStack ? 1000 : 0);
+  const blinkHoldMs = (useShortBlink ? 150 : HOLD_MS) + (enteringStack ? 2500 : 0);
   const blinkOpenMs = useShortBlink ? 550 : OPEN_MS;
 
   busy = true;

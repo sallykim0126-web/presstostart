@@ -470,10 +470,10 @@ function canOpenRanks() {
 let coverSoundPlayed = false;
 function draw(p){
   const t=ease((p-TUNE.flipStart)/(TUNE.flipEnd-TUNE.flipStart));
-  if (t >= .5 && !coverSoundPlayed) {
+  if (t >= .18 && !coverSoundPlayed) {
     coverSoundPlayed = true;
     window.projectSounds?.play('folder');
-  } else if (t < .47) {
+  } else if (t < .14) {
     coverSoundPlayed = false;
   }
 
