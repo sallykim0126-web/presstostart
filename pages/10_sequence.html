@@ -408,7 +408,7 @@ body.crt-shutdown::after {
 ====================================== */
 
 const introArt = document.getElementById("intro-art");
-window.projectSounds?.preload("tryHarderImpact");
+window.projectSounds?.preload("tryHarderRow");
 const introArtReady = introArt.decode().catch(() => {});
 const introSceneVisible = new Promise(resolve => {
   if (window.parent === window) {
@@ -827,13 +827,13 @@ async function playGlitchVideo() {
         track.style.setProperty("--row-scale", scale);
         rows[index].style.visibility = "visible";
         if (index < 4 || [6, 9, 12].includes(index)) {
-          window.projectSounds?.play("tryHarderImpact", { toProgress: 0.22 });
+          window.projectSounds?.play("tryHarderRow", { toProgress: 0.22 });
         }
       }
 
       await Promise.all([introArtReady, introRevealDelay]);
       introArt.hidden = false;
-      window.projectSounds?.play("tryHarderImpact");
+      window.projectSounds?.play("tryHarderRow");
       await waitForIntroSwipe();
 
       await blinkTo(() => {

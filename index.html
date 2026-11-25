@@ -58,7 +58,7 @@
 
 <iframe
   id="pageFrame"
-  src="pages/01_presto.html?v=timing-3"
+  src="pages/01_presto.html?v=timing-4"
   title="Interactive scene"
 ></iframe>
 
@@ -129,7 +129,7 @@ const PAGE_CORE_ASSET = {
   'pages/11.5.html': 'assets/31-0.5.webp',
   'pages/12_leaderboard.html': 'assets/32-01.png',
   'pages/13.html': 'assets/33-14.svg?v=2',
-  'pages/14_drag_redline.html': 'assets/40-18.webp'
+  'pages/14_drag_redline.html': 'assets/40-10.webp'
 };
 
 let nextAssetPrefetch;
@@ -168,7 +168,7 @@ const blink =
 
 
 let currentPage = 0;
-const sceneURL = path => path + '?v=timing-3';
+const sceneURL = path => path + '?v=timing-4';
 
 frame.addEventListener('load', () => warmNextPage(currentPage), { once: true });
 
@@ -320,7 +320,7 @@ async function goTo(index){
   const useShortBlink =
     enteringStack || (fromPage === 'pages/11_stack.html' && toPage === 'pages/11.5.html');
   const blinkCloseMs = useShortBlink ? 550 : CLOSE_MS;
-  const blinkHoldMs = (useShortBlink ? 150 : HOLD_MS) + (enteringStack ? 2500 : 0);
+  const blinkHoldMs = (useShortBlink ? 150 : HOLD_MS) + (enteringStack ? 4200 : 0);
   const blinkOpenMs = useShortBlink ? 550 : OPEN_MS;
 
   busy = true;
@@ -389,6 +389,10 @@ async function goTo(index){
 
   if (toPage === 'pages/13.html') {
     frame.contentWindow.postMessage({ type: 'LEADER_QUOTE_VISIBLE' }, window.location.origin);
+  }
+
+  if (toPage === 'pages/14_drag_redline.html') {
+    frame.contentWindow.postMessage({ type: 'REDLINE_SCENE_VISIBLE' }, window.location.origin);
   }
 
 }

@@ -317,7 +317,7 @@ body{
 <div class="scene">
 
   <img
-    src="../assets/40-18.webp"
+    src="../assets/40-10.webp"
     class="base"
     id="baseImage"
     alt=""
@@ -325,7 +325,7 @@ body{
 
   <img class="base" id="endingQuote" src="../assets/37-18.svg" alt="EFFORT STILL MATTERS" hidden>
 
-  <button type="button" id="redlineClose" aria-label="Close system error">
+  <button type="button" id="redlineClose" aria-label="Close system error" hidden>
     <svg viewBox="0 0 7 7" aria-hidden="true" shape-rendering="crispEdges">
       <path fill="currentColor" d="M1 1h1v1H1z M5 1h1v1H5z M2 2h1v1H2z M4 2h1v1H4z M3 3h1v1H3z M2 4h1v1H2z M4 4h1v1H4z M1 5h1v1H1z M5 5h1v1H5z"/>
     </svg>
@@ -648,7 +648,30 @@ const handReady = hand.decode().catch(() => {});
 let drawingComplete = false;
 
 window.projectSounds?.preload("crayon");
-baseImage.decode().then(() => window.projectSounds?.play("systemError"), () => {});
+window.projectSounds?.preload("tryHarderImpact");
+
+const errorImage = new Image();
+errorImage.src = "../assets/40-18.webp";
+const errorImageReady = errorImage.decode().catch(() => {});
+let errorShown = false;
+
+async function showSystemError() {
+  if (errorShown) return;
+  errorShown = true;
+  await Promise.all([baseImage.decode().catch(() => {}), errorImageReady]);
+  await pause(900);
+  if (endingQuote.hidden === false) return;
+  baseImage.src = errorImage.src;
+  redlineClose.hidden = false;
+  window.projectSounds?.play("tryHarderImpact");
+}
+
+window.addEventListener("message", event => {
+  if (event.source !== window.parent ||
+      event.origin !== window.location.origin ||
+      event.data?.type !== "REDLINE_SCENE_VISIBLE") return;
+  showSystemError();
+});
 
 redlineClose.addEventListener("click", async () => {
   redlineClose.disabled = true;
@@ -1879,7 +1902,7 @@ async function openingBlink() {
   blink.style.visibility = "hidden";
 }
 
-if (window.parent === window) openingBlink();
+if (window.parent === window) openingBlink().then(showSystemError);
 
 
 
